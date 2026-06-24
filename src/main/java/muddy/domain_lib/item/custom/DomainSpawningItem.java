@@ -10,10 +10,29 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 public class DomainSpawningItem extends Item {
-    Holder<MobEffect> domainAppliedEffect;
+    private final Holder<MobEffect> domainAppliedEffect;
+    private int domainRadius = 18;
+    private int domainEffectLength = 20;
+
+    public int getDomainEffectLength() {
+        return domainEffectLength;
+    }
+
+    public void setDomainEffectLength(int domainEffectLength) {
+        this.domainEffectLength = domainEffectLength;
+    }
+
+    public int getDomainRadius() {
+        return domainRadius;
+    }
+
+    public void setDomainRadius(int domainRadius) {
+        this.domainRadius = domainRadius;
+    }
 
     public DomainSpawningItem(Properties properties, Holder<MobEffect> domainEffect) {
         super(properties);
@@ -26,7 +45,12 @@ public class DomainSpawningItem extends Item {
         DomainEntity domain = new DomainEntity(ModEntities.DOMAIN_ENTITY, level);
         domain.setDomainEffect(this.domainAppliedEffect);
         domain.setPos(player.position());
-        domain.setDomainRadius(18);
+        domain.setOwner(player);
+        domain.setDomainRadius(domainRadius);
+        domain.setDomainEffectLength(domainEffectLength);
+
+        player.setDeltaMovement(Vec3.ZERO);
+        player.getCooldowns().addCooldown(this, domain.getLifetime() + 300);
 
         level.addFreshEntity(domain);
 

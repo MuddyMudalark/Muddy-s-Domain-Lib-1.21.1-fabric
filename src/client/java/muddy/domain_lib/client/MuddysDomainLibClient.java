@@ -4,6 +4,8 @@ import muddy.domain_lib.client.entity.DomainRenderer;
 import muddy.domain_lib.entity.ModEntities;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 
 public class MuddysDomainLibClient implements ClientModInitializer {
 	@Override

@@ -1,12 +1,15 @@
 package muddy.domain_lib.util;
 
 
+import muddy.domain_lib.MuddysDomainLib;
 import muddy.domain_lib.block.ModBlocks;
 import muddy.domain_lib.block.custom.DomainAirBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 
 public class DomainBlockBuilder {
     public static void buildStandingSurface(Level level, BlockPos centerPos, int radius) {
@@ -35,7 +38,13 @@ public class DomainBlockBuilder {
 
                         int distanceSquare = x * x + y * y + z * z;
 
-                        if (distanceSquare <= outerSquare && distanceSquare >= innerSquare) {
+                        if (y < 0) {
+                            if (distanceSquare <= radius * radius) {
+                                BlockPos pos = centerPos.offset(x, y, z);
+
+                                level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
+                            }
+                        } else if (distanceSquare <= outerSquare && distanceSquare >= innerSquare) {
                             BlockPos pos = centerPos.offset(x, y, z);
 
                             level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
@@ -47,10 +56,32 @@ public class DomainBlockBuilder {
 
     }
 
-    public static void buildHollowInside(Level level, BlockPos centerPos, int radius, Holder<MobEffect> domainEffect) {
+    public static void buildHollowSphere(Level level, BlockPos centerPos, int radius) {
+        int outerSquare = radius * radius;
+        int innerSquare = (radius - 1) * (radius - 1);
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+
+                    int distanceSquare = x * x + y * y + z * z;
+
+                    if (distanceSquare <= outerSquare && distanceSquare >= innerSquare) {
+                        BlockPos pos = centerPos.offset(x, y, z);
+
+                        level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
+                    }
+                }
+            }
+        }
+    }
+
+    public static void buildHollowInside(Level level, BlockPos centerPos, int radius, Holder<MobEffect> domainEffect, Player owner, int effectInstanceLength) {
         radius -= 1;
         DomainAirBlock domainAir = (DomainAirBlock) ModBlocks.DOMAIN_AIR_BLOCK;
         domainAir.setDomainEffect(domainEffect);
+        domainAir.setDomainEffectLength(effectInstanceLength);
+        domainAir.setDomainOwner(owner);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {

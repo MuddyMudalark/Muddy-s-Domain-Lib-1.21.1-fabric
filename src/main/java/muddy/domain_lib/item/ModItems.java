@@ -24,6 +24,11 @@ public class ModItems {
             "domain_test_item"
     );
 
+    public static final Item DOMAIN_TEST_ITEM2 = register(
+            new DomainSpawningItem(new Item.Properties(), MobEffects.LEVITATION),
+            "domain_test_item2"
+    );
+
     public static void initialize() {
         MuddysDomainLib.LOGGER.info("Shadows Loaded");
     }
