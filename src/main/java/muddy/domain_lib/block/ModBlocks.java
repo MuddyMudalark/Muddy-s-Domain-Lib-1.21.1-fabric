@@ -2,6 +2,7 @@ package muddy.domain_lib.block;
 
 import muddy.domain_lib.MuddysDomainLib;
 import muddy.domain_lib.block.custom.DomainAirBlock;
+import muddy.domain_lib.block.custom.DomainBarrierBlock;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -30,7 +31,7 @@ public class ModBlocks {
     }
 
     public static final Block DOMAIN_BARRIER_BLOCK = register(
-            new Block(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F).lightLevel((blockState) -> 15)),
+            new DomainBarrierBlock(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F).lightLevel((blockState) -> 15)),
             "domain_barrier",
             false
     );

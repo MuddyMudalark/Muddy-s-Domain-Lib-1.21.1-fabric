@@ -13,5 +13,7 @@ public class MuddysDomainLibClient implements ClientModInitializer {
 		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
 
 		EntityRendererRegistry.register(ModEntities.DOMAIN_ENTITY, DomainRenderer::new);
+
+
 	}
 }

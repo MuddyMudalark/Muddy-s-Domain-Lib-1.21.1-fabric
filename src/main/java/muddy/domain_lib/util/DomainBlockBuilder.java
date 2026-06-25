@@ -1,15 +1,14 @@
 package muddy.domain_lib.util;
 
 
-import muddy.domain_lib.MuddysDomainLib;
 import muddy.domain_lib.block.ModBlocks;
 import muddy.domain_lib.block.custom.DomainAirBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
+
+import java.util.UUID;
 
 public class DomainBlockBuilder {
     public static void buildStandingSurface(Level level, BlockPos centerPos, int radius) {
@@ -76,12 +75,13 @@ public class DomainBlockBuilder {
         }
     }
 
-    public static void buildHollowInside(Level level, BlockPos centerPos, int radius, Holder<MobEffect> domainEffect, Player owner, int effectInstanceLength) {
+    public static void buildHollowInside(Level level, BlockPos centerPos, int radius, Holder<MobEffect> domainEffect, UUID ownerUUID, int effectInstanceLength) {
         radius -= 1;
         DomainAirBlock domainAir = (DomainAirBlock) ModBlocks.DOMAIN_AIR_BLOCK;
         domainAir.setDomainEffect(domainEffect);
         domainAir.setDomainEffectLength(effectInstanceLength);
-        domainAir.setDomainOwner(owner);
+        domainAir.setDomainOwnerUUID(ownerUUID);
+        domainAir.setIfHasInitialized(true);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {

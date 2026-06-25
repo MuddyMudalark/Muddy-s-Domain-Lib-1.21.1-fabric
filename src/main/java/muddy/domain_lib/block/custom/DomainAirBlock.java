@@ -1,25 +1,17 @@
 package muddy.domain_lib.block.custom;
 
-import muddy.domain_lib.MuddysDomainLib;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AirBlock;
-import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.UUID;
 
 public class DomainAirBlock extends AirBlock {
     private Holder<MobEffect> domainEffect;
-    private Player domainOwner;
+    private UUID domainOwnerUUID;
     private int domainEffectLength = 20;
-
-    @Override
-    protected void onPlace(BlockState blockState, Level level, BlockPos blockPos, BlockState blockState2, boolean bl) {
-//        MuddysDomainLib.LOGGER.info("Domain Effect: {}", domainEffect.getRegisteredName());
-
-        super.onPlace(blockState, level, blockPos, blockState2, bl);
-    }
+    private boolean hasInitialized = false;
 
     public int getDomainEffectLength() {
         return domainEffectLength;
@@ -29,12 +21,20 @@ public class DomainAirBlock extends AirBlock {
         this.domainEffectLength = domainEffectLength;
     }
 
-    public Player getDomainOwner() {
-        return domainOwner;
+    public UUID getDomainOwnerUUID() {
+        return domainOwnerUUID;
     }
 
-    public void setDomainOwner(Player domainOwner) {
-        this.domainOwner = domainOwner;
+    public void setDomainOwnerUUID(UUID domainOwnerUUID) {
+        this.domainOwnerUUID = domainOwnerUUID;
+    }
+
+    public boolean getIfHasInitialized() {
+        return hasInitialized;
+    }
+
+    public void setIfHasInitialized(boolean hasInitialized) {
+        this.hasInitialized = hasInitialized;
     }
 
     public DomainAirBlock(Properties properties) {

@@ -116,7 +116,6 @@ public class DomainEntity extends LivingEntity { ;
         compoundTag.putInt("DomainRadius", this.radius);
         compoundTag.putInt("DomainLifetime", this.lifetime);
         compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
-        compoundTag.putBoolean("FirstLoad", false);
         compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
 
         if (this.owner != null) {
@@ -151,18 +150,20 @@ public class DomainEntity extends LivingEntity { ;
     public void readAdditionalSaveData(CompoundTag compoundTag) {
         MuddysDomainLib.LOGGER.info("Getting Info From Save Data");
 
-        this.firstLoad = compoundTag.getBoolean("FirstLoad");
-        this.hasExpandedFully = compoundTag.getBoolean("HasDomainExpanded");
-        this.age = compoundTag.getInt("DomainAge");
-        this.lifetime = compoundTag.getInt("DomainLifetime");
-        this.maxRadius = compoundTag.getInt("DomainRadius");
-        this.domainEffect = MobEffect.CODEC.parse(NbtOps.INSTANCE, compoundTag.get("DomainEffect"))
+//        firstLoad = compoundTag.getBoolean("FirstLoad");
+        firstLoad = false;
+        hasExpandedFully = compoundTag.getBoolean("HasDomainExpanded");
+        age = compoundTag.getInt("DomainAge");
+        lifetime = compoundTag.getInt("DomainLifetime");
+        maxRadius = compoundTag.getInt("DomainRadius");
+        domainEffect = MobEffect.CODEC.parse(NbtOps.INSTANCE, compoundTag.get("DomainEffect"))
                 .resultOrPartial(error -> MuddysDomainLib.LOGGER.info("The Overall Effect This Code Has on me is: {}", error))
                 .orElse(MobEffects.LEVITATION);
 
-        if (!compoundTag.getUUID("Owner").equals(null)) {
-            this.ownerUUID = compoundTag.getUUID("Owner");
-        }
+        this.ownerUUID = compoundTag.getUUID("Owner");
+
+        MuddysDomainLib.LOGGER.info("After Reading Data The Owner's UUID is: {}", (ownerUUID == null ? "NULL" : ownerUUID.toString()));
+
 
         ListTag posList = (ListTag) compoundTag.get("DomainBlocksPos");
         ListTag stateList = (ListTag) compoundTag.get("DomainBlockStates");
@@ -194,25 +195,12 @@ public class DomainEntity extends LivingEntity { ;
             mappedResults.put(blockPosList.get(i), blockStateList.get(i));
         }
 
-        this.savedBlocks.clear();
+        savedBlocks.clear();
 
-        this.savedBlocks = mappedResults;
+        savedBlocks = mappedResults;
 
         List<String> nullList = new ArrayList<>();
         List<String> nonNullList = new ArrayList<>();
-
-        for (String key: compoundTag.getAllKeys()) {
-            Tag tag = compoundTag.get(key);
-
-            if (tag.equals(null)) {
-                nullList.add(tag.getAsString());
-            } else {
-                nonNullList.add(tag.getAsString());
-            }
-        }
-
-        MuddysDomainLib.LOGGER.info("The Non-Null Objects Are: {}", nonNullList);
-        MuddysDomainLib.LOGGER.info("The Null Objects Are: {}", nullList);
 
         super.readAdditionalSaveData(compoundTag);
     }
@@ -227,55 +215,53 @@ public class DomainEntity extends LivingEntity { ;
     @Override
     public void tick() {
         if (!this.level().isClientSide) {
-            if (!this.firstLoad && !hasReloaded) {
-                this.radius = this.maxRadius;
-                this.hasExpandedFully = true;
+            if (!firstLoad && !hasReloaded) {
+                radius = maxRadius;
+                hasExpandedFully = true;
 
-                if (!domainEffect.equals(null) && owner != null) {
-                    MuddysDomainLib.LOGGER.info("Has been reloaded with domain effect: {}", domainEffect.getRegisteredName());
-
+                if (!domainEffect.equals(null) && ownerUUID != null) {
                     domainExpansionOnReload();
 
                     hasReloaded = true;
                 }
             }
-            if (this.firstTick) {
-                if (!this.hasExpandedFully && this.firstLoad ) {
+            if (firstTick) {
+                if (!hasExpandedFully && firstLoad ) {
                     saveDomainBlocks();
                 }
             } else {
-                if (this.radius >= this.maxRadius) {
-                    this.hasExpandedFully = true;
+                if (radius >= maxRadius) {
+                    hasExpandedFully = true;
 
-                    this.age++;
-                } else if (this.expandTick && !this.hasExpandedFully) {
-                    if (this.radius < 4) {
-                        this.firstTicksDomainExpansion();
+                    age++;
+                } else if (!hasExpandedFully && expandTick) {
+                    if (radius < 4) {
+                        firstTicksDomainExpansion();
                     } else {
-                        this.domainExpansion();
+                        domainExpansion();
                     }
 
-                    if (this.radius >= 13) {
+                    if (radius >= 13) {
                         yRadius+=3;
                     } else {
-                        this.yRadius+=2;
+                        yRadius+=2;
                     }
-                    this.radius++;
-                    this.expandTick=false;
+                    radius++;
+                    expandTick=false;
                 } else {
-                    this.ticksInBetweenExpansion++;
+                    ticksInBetweenExpansion++;
 
-                    if (this.ticksInBetweenExpansion >= 4) {
-                        this.ticksInBetweenExpansion=0;
+                    if (ticksInBetweenExpansion >= 4) {
+                        ticksInBetweenExpansion=0;
 
-                        this.expandTick=true;
+                        expandTick=true;
                     }
                 }
             }
-            if (this.ownerUUID != null) {
-                this.owner = this.level().getPlayerByUUID(this.ownerUUID);
+            if (ownerUUID != null) {
+                owner = level().getPlayerByUUID(ownerUUID);
             }
-        } if (this.age >= this.lifetime || this.isDeadOrDying()) {
+        } if (age >= lifetime || isDeadOrDying()) {
             closeDomain();
         } if (ownerCausesDomainExpansionToEnd()) {
             closeDomain();
@@ -299,23 +285,23 @@ public class DomainEntity extends LivingEntity { ;
     }
 
     private void firstTicksDomainExpansion() {
-        DomainBlockBuilder.buildHollowInside(this.level(), this.blockPosition(), this.radius, this.domainEffect, this.owner, this.domainEffectLength);
+        DomainBlockBuilder.buildHollowInside(level(), blockPosition(), radius, domainEffect, ownerUUID, domainEffectLength);
 
-        DomainBlockBuilder.buildStandingSurface(this.level(), this.blockPosition(), this.radius);
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius);
     }
 
     public void domainExpansion() {
-        DomainBlockBuilder.buildHollowInside(this.level(), this.blockPosition(), this.radius, this.domainEffect, this.owner, this.domainEffectLength);
+        DomainBlockBuilder.buildHollowInside(level(), blockPosition(), radius, domainEffect, ownerUUID, domainEffectLength);
 
-        DomainBlockBuilder.buildStandingSurface(this.level(), this.blockPosition(), this.radius);
-        DomainBlockBuilder.buildHollowSphereDynamically(this.level(), this.blockPosition(), this.radius, this.yRadius);
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius);
+        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius);
     }
 
     public void domainExpansionOnReload() {
-        DomainBlockBuilder.buildHollowInside(this.level(), this.blockPosition(), this.maxRadius, this.domainEffect, this.owner, this.domainEffectLength);
+        DomainBlockBuilder.buildHollowInside(level(), blockPosition(), maxRadius, domainEffect, ownerUUID, domainEffectLength);
 
-        DomainBlockBuilder.buildStandingSurface(this.level(), this.blockPosition(), this.maxRadius);
-        DomainBlockBuilder.buildHollowSphere(this.level(), this.blockPosition(), this.maxRadius);
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), maxRadius);
+        DomainBlockBuilder.buildHollowSphere(level(), blockPosition(), maxRadius);
     }
 
     public void saveDomainBlocks() {
@@ -328,9 +314,9 @@ public class DomainEntity extends LivingEntity { ;
                     int distSq = x * x + y * y + z * z;
 
                     if (distSq <= maxRadius * maxRadius) {
-                        BlockPos pos = this.blockPosition().offset(x, y, z);
+                        BlockPos pos = blockPosition().offset(x, y, z);
 
-                        savedBlocks.put(pos.immutable(), this.level().getBlockState(pos));
+                        savedBlocks.put(pos.immutable(), level().getBlockState(pos));
                     }
                 }
             }
