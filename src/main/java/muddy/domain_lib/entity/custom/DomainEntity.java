@@ -1,6 +1,7 @@
 package muddy.domain_lib.entity.custom;
 
 import muddy.domain_lib.MuddysDomainLib;
+import muddy.domain_lib.entity.ModEntities;
 import muddy.domain_lib.util.DomainBlockBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -85,16 +86,24 @@ public class DomainEntity extends LivingEntity { ;
     public void setOwner(Player owner) {
 
         this.owner = owner;
-        this.ownerUUID = this.owner.getUUID();
+        this.ownerUUID = owner.getUUID();
     }
 
     public Player getOwner() {
         return this.owner;
     }
 
+    public UUID getOwnerUUID() {
+        return ownerUUID;
+    }
+
     public void setDomainRadius(int newRadius) {
         this.maxRadius = newRadius;
         this.yRadius = -newRadius;
+    }
+
+    public int getDomainRadius() {
+        return maxRadius;
     }
 
     public Holder<MobEffect> getDomainEffect() {
@@ -226,8 +235,9 @@ public class DomainEntity extends LivingEntity { ;
                 }
             }
             if (firstTick) {
-                if (!hasExpandedFully && firstLoad ) {
+                if (!hasExpandedFully && firstLoad) {
                     saveDomainBlocks();
+                    checkForClash();
                 }
             } else {
                 if (radius >= maxRadius) {
@@ -323,6 +333,49 @@ public class DomainEntity extends LivingEntity { ;
         }
     }
 
+    private List<DomainEntity> domainsInRange = new ArrayList<>();
+
+    public void checkForClash() {
+        for (int i = 0; i < 999; i++) {
+            if (level().getEntity(i) != null)  {
+                if (level().getEntity(i) instanceof DomainEntity domainEntity) {
+                    if (domainEntity.distanceTo(this) <= maxRadius || this.distanceTo(domainEntity) <= domainEntity.getDomainRadius()) {
+                        domainsInRange.add(domainEntity);
+                    }
+                }
+            } else {
+                if (!domainsInRange.isEmpty()) {
+                    initiateDomainClash();
+                }
+            }
+        }
+    }
+
+    public void initiateDomainClash() {
+        Vec3 midpointCoordinates = position();
+
+        int clashRadius = 0;
+        int clashLifetime = 0;
+        List<UUID> clashDomainOwnerUUIDs = List.of(ownerUUID);
+        List<DomainEntity> domainClashParents = List.of(this);
+        BlockPos clashPos = this.blockPosition();
+
+
+        for (DomainEntity domainEntity : domainsInRange) {
+            midpointCoordinates = midpointOfVectors(this.position(), domainEntity.position());
+
+            clashRadius = Math.max(clashRadius, domainEntity.getDomainRadius());
+            clashLifetime = Math.max(clashLifetime, domainEntity.getLifetime());
+            clashDomainOwnerUUIDs.add(domainEntity.getOwner().getUUID());
+            clashPos = new BlockPos((int) midpointCoordinates.x, (int) midpointCoordinates.y, (int) midpointCoordinates.z);
+        }
+
+        DomainClashEntity domainClashEntity = new DomainClashEntity(ModEntities.DOMAIN_CLASH_ENTITY, level());
+        domainClashEntity.of(clashRadius, clashLifetime, clashDomainOwnerUUIDs, domainClashParents, clashPos);
+
+        level().addFreshEntity(domainClashEntity);
+    }
+
     public void closeDomain() {
         for (Map.Entry<BlockPos, BlockState> entry : savedBlocks.entrySet()) {
             BlockPos savedBlockPos = entry.getKey();
@@ -334,9 +387,12 @@ public class DomainEntity extends LivingEntity { ;
         this.remove(RemovalReason.DISCARDED);
     }
 
-    @Override
-    protected @NotNull AABB makeBoundingBox() {
-        return AABB.ofSize(new Vec3(1, 1, 1), 1, 1, 1);
+    private Vec3 midpointOfVectors(Vec3 point1, Vec3 point2) {
+        double x = (point1.x() + point2.x()) / 2;
+        double y = (point1.y() + point2.y()) / 2;
+        double z = (point1.z() + point2.z()) / 2;
+
+        return new Vec3(x, y, z);
     }
 
     @Override
