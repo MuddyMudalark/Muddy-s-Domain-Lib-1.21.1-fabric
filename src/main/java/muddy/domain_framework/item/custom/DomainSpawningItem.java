@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 public class DomainSpawningItem extends Item {
     private final Holder<MobEffect> domainAppliedEffect;
     private int domainRadius = 18;
-    private int domainEffectLength = 20;
+    private int domainEffectLength = 40;
 
     public int getDomainEffectLength() {
         return domainEffectLength;

@@ -16,7 +16,7 @@ public class ModEffects {
         DOMAIN_EXPANDING = Registry.registerForHolder(
                 BuiltInRegistries.MOB_EFFECT,
                 ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, "expanding-domain"),
-                (new DomainEffect(MobEffectCategory.NEUTRAL, 0))
+                new DomainEffect(MobEffectCategory.NEUTRAL, 0)
         );
     }
 

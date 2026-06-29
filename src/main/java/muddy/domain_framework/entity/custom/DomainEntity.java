@@ -411,6 +411,8 @@ public class DomainEntity extends LivingEntity { ;
 
         }
 
+        MuddysDomainFramework.LOGGER.info("The Domain Has Been Removed: {}", this.getUUID());
+
         this.remove(RemovalReason.DISCARDED);
     }
 

@@ -17,8 +17,6 @@ public class ModBlocks {
         // Register the block and its item.
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, name);
 
-        // Sometimes, you may not want to register an item for the block.
-        // Eg: if it's a technical block like `minecraft:air` or `minecraft:end_gateway`
         if (shouldRegisterItem) {
             BlockItem blockItem = new BlockItem(block, new Item.Properties());
             Registry.register(BuiltInRegistries.ITEM, id, blockItem);

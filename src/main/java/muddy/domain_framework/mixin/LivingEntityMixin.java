@@ -1,7 +1,6 @@
 package muddy.domain_framework.mixin;
 
 import muddy.domain_framework.block.custom.DomainAirBlock;
-import muddy.domain_framework.effect.ModEffects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,10 +23,6 @@ public class LivingEntityMixin {
 
         if (level != null) {
             domain$inDomainAirBlock(level);
-
-            if (thisEntity.hasEffect(ModEffects.DOMAIN_EXPANDING)) {
-                thisEntity.setDeltaMovement(Vec3.ZERO);
-            }
         }
     }
 
@@ -44,7 +39,8 @@ public class LivingEntityMixin {
                     if (!domainAir.getDomainEffect().equals(null)) {
                         if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
 
-                            thisEntity.addEffect(new MobEffectInstance(domainAir.getDomainEffect(),
+                            thisEntity.addEffect(new MobEffectInstance(
+                                    domainAir.getDomainEffect(),
                                     domainAir.getDomainEffectLength(),
                                     0,
                                     false,
@@ -54,14 +50,7 @@ public class LivingEntityMixin {
                     }
                 }
             } if (!domainAir.getHasExpandedFully()) {
-                if (!thisEntity.hasEffect(ModEffects.DOMAIN_EXPANDING)) {
-                    thisEntity.addEffect(new MobEffectInstance(ModEffects.DOMAIN_EXPANDING,
-                            20,
-                            0,
-                            false,
-                            false)
-                    );
-                }
+                thisEntity.setDeltaMovement(Vec3.ZERO);
             }
         }
     }

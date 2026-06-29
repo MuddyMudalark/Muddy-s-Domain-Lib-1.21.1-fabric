@@ -9,6 +9,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,9 +23,10 @@ public class DomainClashEntity extends LivingEntity {
     private int ticksInBetweenExpansion = 0;
 
     private int maxRadius;
-    private int radius = 1;
+    private int radius = 5;
     private int yRadius = -maxRadius;
     private int lifetime = 1200;
+    private int age = 0;
 
     private BlockPos centerPos;
 
@@ -36,6 +38,8 @@ public class DomainClashEntity extends LivingEntity {
 
     private boolean killedAllParents = false;
     private boolean hasExpandedFully = false;
+
+    private boolean firstTimeTicked = true;
 
     public DomainClashEntity(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -74,58 +78,92 @@ public class DomainClashEntity extends LivingEntity {
 
     @Override
     public void tick() {
-        if (!this.level().isClientSide) {
-            int domainsKilledCount = 0;
-            for (DomainEntity domainClashParent : domainClashParents) {
-                domainClashParent.kill();
+        if (!level().isClientSide) {
+            if (!killedAllParents) {
+                int domainsKilledCount = 0;
 
-                if (domainsKilledCount == domainClashParents.size()) {
-                    killedAllParents = true;
+                for (DomainEntity domainClashParent : domainClashParents.reversed()) {
+                    domainClashParent.closeDomain();
+
+                    domainsKilledCount++;
+
+                    if (domainsKilledCount == domainClashParents.size()) {
+                        killedAllParents = true;
+                    }
                 }
-            }
+            } else {
+                if (firstTimeTicked) {
+                    saveDomainBlocks();
 
-            if (killedAllParents) {
-                // I am the darkness
-                saveDomainBlocks();
-            }
+                    for (UUID ownerUUID : domainOwnerUUIDList) {
+                        if (!level().getPlayerByUUID(ownerUUID).equals(null)) {
+                            Player owner = level().getPlayerByUUID(ownerUUID);
 
-            if (!hasExpandedFully) {
-                if (radius >= maxRadius) {
-                    isClashing = true;
-                    hasExpandedFully = true;
-                } else if (expandTick) {
-                    if (radius < 4) {
-                        firstTicksDomainExpansion();
-                    } else {
-                        domainExpansion();
+
+                        }
                     }
 
-                    if (radius >= 13) {
-                        yRadius += 3;
-                    } else {
-                        yRadius += 2;
-                    }
-
-
-
-                    radius = radius < maxRadius ? radius++ : maxRadius;
-                    expandTick = false;
+                    firstTimeTicked = false;
                 } else {
-                    ticksInBetweenExpansion++;
+                    if (!hasExpandedFully) {
+                        if (radius >= maxRadius) {
+                            isClashing = true;
+                            hasExpandedFully = true;
+                        } else if (expandTick) {
+                            if (radius < 10) {
+                                firstTicksDomainExpansion();
+                            } else {
+                                domainExpansion();
 
-                    if (ticksInBetweenExpansion >= 4) {
-                        ticksInBetweenExpansion = 0;
+                                if (radius >= 13) {
+                                    yRadius += 3;
+                                } else {
+                                    yRadius += 2;
+                                }
+                            }
 
-                        expandTick = true;
+                            radius++;
+
+                            expandTick = false;
+                        } else {
+                            ticksInBetweenExpansion++;
+
+                            if (ticksInBetweenExpansion >= 4) {
+                                ticksInBetweenExpansion = 0;
+
+                                expandTick = true;
+                            }
+                        }
+                    } else if (isClashing) {
+                        age++;
                     }
                 }
-            } else if (isClashing) {
+            }
 
+            if (age >= lifetime || isDeadOrDying()) {
+                closeDomain();
+            } if (ownersAllDieCauseDomainClashToEnd()) {
+                closeDomain();
             }
 
         }
 
         super.tick();
+    }
+
+    private boolean ownersAllDieCauseDomainClashToEnd() {
+        int ownersWhoDied = 0;
+        for (UUID ownerUUID : domainOwnerUUIDList) {
+            if (level().getPlayerByUUID(ownerUUID) != null) {
+                Player owner = level().getPlayerByUUID(ownerUUID);
+
+                if (owner.isDeadOrDying() || owner.distanceTo(this) > this.maxRadius) {
+                    ownersWhoDied++;
+                }
+            }
+        }
+
+        return ownersWhoDied >= domainOwnerUUIDList.size();
     }
 
     public void saveDomainBlocks() {
@@ -165,10 +203,15 @@ public class DomainClashEntity extends LivingEntity {
             BlockPos savedBlockPos = entry.getKey();
             BlockState oldState = entry.getValue();
 
-            this.level().setBlockAndUpdate(savedBlockPos, oldState);
+            level().setBlockAndUpdate(savedBlockPos, oldState);
         }
 
         this.remove(RemovalReason.DISCARDED);
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        return false;
     }
 
     @Override
