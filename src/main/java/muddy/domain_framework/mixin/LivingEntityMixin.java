@@ -1,0 +1,68 @@
+package muddy.domain_framework.mixin;
+
+import muddy.domain_framework.block.custom.DomainAirBlock;
+import muddy.domain_framework.effect.ModEffects;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.UUID;
+
+@Mixin(LivingEntity.class)
+public class LivingEntityMixin {
+    @Inject(method = "tick", at = @At("TAIL"))
+    public void domain$tick(CallbackInfo ci) {
+        LivingEntity thisEntity = ((LivingEntity) (Object) this);
+        Level level = thisEntity.level();
+
+        if (level != null) {
+            domain$inDomainAirBlock(level);
+
+            if (thisEntity.hasEffect(ModEffects.DOMAIN_EXPANDING)) {
+                thisEntity.setDeltaMovement(Vec3.ZERO);
+            }
+        }
+    }
+
+
+    @Unique
+    public void domain$inDomainAirBlock(Level level) {
+        LivingEntity thisEntity = ((LivingEntity) (Object) this);
+        BlockPos entityBlockPos = thisEntity.blockPosition();
+
+        if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainAirBlock domainAir) {
+            UUID ownerUUID = domainAir.getDomainOwnerUUID();
+            if (ownerUUID != null) {
+                if (!thisEntity.getUUID().equals(ownerUUID)) {
+                    if (!domainAir.getDomainEffect().equals(null)) {
+                        if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
+
+                            thisEntity.addEffect(new MobEffectInstance(domainAir.getDomainEffect(),
+                                    domainAir.getDomainEffectLength(),
+                                    0,
+                                    false,
+                                    false)
+                            );
+                        }
+                    }
+                }
+            } if (!domainAir.getHasExpandedFully()) {
+                if (!thisEntity.hasEffect(ModEffects.DOMAIN_EXPANDING)) {
+                    thisEntity.addEffect(new MobEffectInstance(ModEffects.DOMAIN_EXPANDING,
+                            20,
+                            0,
+                            false,
+                            false)
+                    );
+                }
+            }
+        }
+    }
+}

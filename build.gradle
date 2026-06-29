@@ -18,7 +18,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"muddys-domain-lib" {
+		"muddys-domain-framework" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}

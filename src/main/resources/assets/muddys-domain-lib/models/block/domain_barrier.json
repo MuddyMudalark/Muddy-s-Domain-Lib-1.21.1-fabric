@@ -1,6 +1,0 @@
-{
-  "parent": "block/cube_all",
-  "textures": {
-    "all": "muddys-domain-lib:block/domain_barrier"
-  }
-}

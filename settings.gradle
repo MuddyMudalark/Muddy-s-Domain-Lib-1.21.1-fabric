@@ -10,4 +10,4 @@ pluginManagement {
 }
 
 // Should match your modid
-rootProject.name = 'muddys-domain-lib'
+rootProject.name = 'muddys-domain-framework'

@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "muddys-domain-lib",
+	"id": "muddys-domain-framework",
 	"version": "${version}",
-	"name": "muddys-domain-lib",
+	"name": "muddys-domain-framework",
 	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
 		"Me!"
@@ -12,20 +12,20 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/muddys-domain-lib/icon.png",
+	"icon": "assets/muddys-domain-framework/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"muddy.domain_lib.MuddysDomainLib"
+			"muddy.domain_framework.MuddysDomainFramework"
 		],
 		"client": [
-			"muddy.domain_lib.client.MuddysDomainLibClient"
+			"muddy.domain_framework.client.MuddysDomainFrameworkClient"
 		]
 	},
 	"mixins": [
-		"muddys-domain-lib.mixins.json",
+		"muddys-domain-framework.mixins.json",
 		{
-			"config": "muddys-domain-lib.client.mixins.json",
+			"config": "muddys-domain-framework.client.mixins.json",
 			"environment": "client"
 		}
 	],

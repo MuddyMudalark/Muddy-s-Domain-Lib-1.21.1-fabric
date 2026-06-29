@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "muddys-domain-framework:block/domain_barrier" }
+  }
+}
