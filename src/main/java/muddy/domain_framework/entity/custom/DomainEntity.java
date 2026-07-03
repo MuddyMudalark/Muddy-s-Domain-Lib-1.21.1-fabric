@@ -67,7 +67,7 @@ public class DomainEntity extends LivingEntity { ;
                 .add(Attributes.WATER_MOVEMENT_EFFICIENCY);
     }
 
-    public boolean getIfDomainHasFullyExpanded() {
+    public boolean isFullyExpanded() {
         return hasExpandedFully;
     }
 
@@ -134,7 +134,7 @@ public class DomainEntity extends LivingEntity { ;
     @Override
     public void addAdditionalSaveData(CompoundTag compoundTag) {
         compoundTag.putInt("DomainAge", this.age);
-        compoundTag.putInt("DomainRadius", this.radius);
+        compoundTag.putInt("DomainRadius", this.maxRadius);
         compoundTag.putInt("DomainLifetime", this.lifetime);
         compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
         compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
@@ -292,6 +292,8 @@ public class DomainEntity extends LivingEntity { ;
             } if (ownerUUID != null) {
                 owner = level().getPlayerByUUID(ownerUUID);
             } if (firstTick && !hasExpandedFully) {
+                MuddysDomainFramework.LOGGER.info("This Domain's UUID is: {}", this.getUUID());
+
                 checkForClash();
             }
         }
@@ -360,16 +362,24 @@ public class DomainEntity extends LivingEntity { ;
 
     public void checkForClash() {
         ArrayList<DomainEntity> domainsInRange = new ArrayList<>();
+        ArrayList<DomainClashEntity> clashingDomainsInRange = new ArrayList<>();
 
         for (Entity entity : level().getEntities(this, AABB.encapsulatingFullBlocks(blockPosition().offset(-100, -100, -100), blockPosition().offset(100, 100, 100)))) {
             if (entity instanceof DomainEntity domainEntity) {
                 if (domainEntity.distanceTo(this) <= maxRadius || this.distanceTo(domainEntity) <= domainEntity.getDomainRadius()) {
-                    MuddysDomainFramework.LOGGER.info("Domain In Range!");
 
-                    domainsInRange.add(domainEntity);
-                } else {
-                    MuddysDomainFramework.LOGGER.info("Domain Outside Range At Pos: {}", domainEntity.position());
-                    MuddysDomainFramework.LOGGER.info("This Domain is {} blocks away from it.", this.distanceTo(domainEntity));
+                    if (!this.getUUID().equals(entity.getUUID())) {
+                        domainsInRange.add(domainEntity);
+                    }
+
+                }
+            }
+
+            if (entity instanceof DomainClashEntity domainClashEntity) {
+                if (domainClashEntity.distanceTo(this) <= maxRadius || this.distanceTo(domainClashEntity) <= domainClashEntity.getMaxRadius()) {
+
+
+                    clashingDomainsInRange.add(domainClashEntity);
                 }
             }
         }
@@ -377,20 +387,73 @@ public class DomainEntity extends LivingEntity { ;
         if (!domainsInRange.isEmpty()) {
             Vec3 midpointCoordinates = position();
 
-            int clashRadius = 0;
-            int clashLifetime = 0;
+            int clashRadius = maxRadius;
+            int clashLifetime = lifetime;
             List<UUID> clashDomainOwnerUUIDs = new ArrayList<>(List.of(ownerUUID));
             domainsInRange.add(this);
             BlockPos clashPos = this.blockPosition();
 
-
             for (DomainEntity domainEntity : domainsInRange) {
-                midpointCoordinates = midpointOfVectors(this.position(), domainEntity.position());
+                if (!domainEntity.isFullyExpanded() || domainsInRange.size() > 1) {
+                    midpointCoordinates = midpointOfVectors(midpointCoordinates, domainEntity.position());
 
-                clashRadius = Math.max(clashRadius, domainEntity.getDomainRadius());
-                clashLifetime = Math.max(clashLifetime, domainEntity.getLifetime());
-                clashDomainOwnerUUIDs.add(domainEntity.getOwner().getUUID());
-                clashPos = new BlockPos((int) midpointCoordinates.x, (int) midpointCoordinates.y, (int) midpointCoordinates.z);
+                    clashRadius = Math.max(clashRadius, domainEntity.getDomainRadius());
+                    clashLifetime = Math.max(clashLifetime, domainEntity.getLifetime());
+                    clashDomainOwnerUUIDs.add(domainEntity.getOwner().getUUID());
+                    clashPos = new BlockPos((int) midpointCoordinates.x, (int) midpointCoordinates.y, (int) midpointCoordinates.z);
+
+
+                } else {
+                    clashRadius = domainEntity.getDomainRadius();
+                    clashLifetime = domainEntity.getLifetime();
+                    clashDomainOwnerUUIDs.add(domainEntity.getOwnerUUID());
+                    clashPos = domainEntity.blockPosition();
+                }
+            }
+
+            DomainClashEntity domainClashEntity = new DomainClashEntity(ModEntities.DOMAIN_CLASH_ENTITY, level());
+            domainClashEntity.of(clashRadius, clashLifetime, clashDomainOwnerUUIDs, domainsInRange, clashPos);
+
+            level().addFreshEntity(domainClashEntity);
+
+        } if (!clashingDomainsInRange.isEmpty()) {
+            Vec3 midpointCoordinates = position();
+
+            int clashRadius = maxRadius;
+            int clashLifetime = lifetime;
+            List<UUID> clashDomainOwnerUUIDs = new ArrayList<>(List.of(ownerUUID));
+            BlockPos clashPos = this.blockPosition();
+
+
+            for (DomainClashEntity domainClashEntity : clashingDomainsInRange) {
+                if (!domainClashEntity.isFullyExpanded() || clashingDomainsInRange.size() > 1) {
+                    midpointCoordinates = midpointOfVectors(midpointCoordinates, domainClashEntity.position());
+
+                    clashRadius = Math.max(clashRadius, domainClashEntity.getMaxRadius());
+                    clashLifetime = Math.max(clashLifetime, domainClashEntity.getLifetime());
+
+                    for (UUID ownerUUID : domainClashEntity.getDomainOwnerUUIDList()) {
+                        if (!clashDomainOwnerUUIDs.contains(ownerUUID)) {
+                            clashDomainOwnerUUIDs.add(ownerUUID);
+                        }
+                    }
+
+                    domainsInRange.addAll(domainClashEntity.getDomainClashParents());
+
+                    clashPos = new BlockPos((int) midpointCoordinates.x, (int) midpointCoordinates.y, (int) midpointCoordinates.z);
+                } else {
+                    clashRadius = domainClashEntity.getMaxRadius();
+                    clashLifetime = domainClashEntity.getLifetime();
+
+                    for (UUID ownerUUID : domainClashEntity.getDomainOwnerUUIDList()) {
+                        if (!clashDomainOwnerUUIDs.contains(ownerUUID)) {
+                            clashDomainOwnerUUIDs.add(ownerUUID);
+                        }
+                    }
+
+                    domainsInRange.addAll(domainClashEntity.getDomainClashParents());
+                    clashPos = domainClashEntity.blockPosition();
+                }
             }
 
             DomainClashEntity domainClashEntity = new DomainClashEntity(ModEntities.DOMAIN_CLASH_ENTITY, level());
@@ -410,8 +473,6 @@ public class DomainEntity extends LivingEntity { ;
             }
 
         }
-
-        MuddysDomainFramework.LOGGER.info("The Domain Has Been Removed: {}", this.getUUID());
 
         this.remove(RemovalReason.DISCARDED);
     }

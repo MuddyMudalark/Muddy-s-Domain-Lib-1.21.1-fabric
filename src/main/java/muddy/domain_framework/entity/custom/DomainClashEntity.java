@@ -1,8 +1,11 @@
 package muddy.domain_framework.entity.custom;
 
+import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import muddy.domain_framework.util.DomainClashBlockBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.nbt.*;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -12,6 +15,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,8 +32,6 @@ public class DomainClashEntity extends LivingEntity {
     private int lifetime = 1200;
     private int age = 0;
 
-    private BlockPos centerPos;
-
     private List<UUID> domainOwnerUUIDList = new ArrayList<>();
     private List<DomainEntity> domainClashParents = new ArrayList<>();
 
@@ -40,6 +42,7 @@ public class DomainClashEntity extends LivingEntity {
     private boolean hasExpandedFully = false;
 
     private boolean firstTimeTicked = true;
+    private boolean ownersHaveBeenTeleported = false;
 
     public DomainClashEntity(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -53,6 +56,117 @@ public class DomainClashEntity extends LivingEntity {
         this.setPos(centerPos.getCenter());
     }
 
+    @Override
+    public void addAdditionalSaveData(CompoundTag compoundTag) {
+        compoundTag.putInt("DomainAge", this.age);
+        compoundTag.putInt("DomainRadius", this.maxRadius);
+        compoundTag.putInt("DomainLifetime", this.lifetime);
+        compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
+//        compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
+
+        compoundTag.put("OwnersUUIDs", UUIDUtil.CODEC.listOf().encodeStart(NbtOps.INSTANCE, this.domainOwnerUUIDList).getOrThrow());
+
+
+        if (this.savedBlocks != null && !this.savedBlocks.isEmpty()) {
+            ListTag posList = new ListTag();
+            ListTag stateList = new ListTag();
+
+            for (Map.Entry<BlockPos, BlockState> block : savedBlocks.entrySet()) {
+                CompoundTag posEntry = new CompoundTag();
+                CompoundTag stateEntry = new CompoundTag();
+
+                posEntry.put("Pos", BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, block.getKey()).getOrThrow());
+
+                stateEntry.put("BlockState", BlockState.CODEC.encodeStart(NbtOps.INSTANCE, block.getValue()).getOrThrow());
+
+                posList.add(posEntry);
+                stateList.add(stateEntry);
+            }
+
+            compoundTag.put("DomainBlocksPos", posList);
+            compoundTag.put("DomainBlockStates", stateList);
+
+        }
+
+        super.addAdditionalSaveData(compoundTag);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag compoundTag) {
+        hasExpandedFully = compoundTag.getBoolean("HasDomainExpanded");
+        age = compoundTag.getInt("DomainAge");
+        lifetime = compoundTag.getInt("DomainLifetime");
+        maxRadius = compoundTag.getInt("DomainRadius");
+
+        domainOwnerUUIDList = UUIDUtil.CODEC.listOf().parse(NbtOps.INSTANCE, compoundTag.get("OwnersUUIDs")).getOrThrow();
+
+
+        ListTag posList = (ListTag) compoundTag.get("DomainBlocksPos");
+        ListTag stateList = (ListTag) compoundTag.get("DomainBlockStates");
+
+        List<BlockPos> blockPosList = new ArrayList<>(List.of());
+        List<BlockState> blockStateList = new ArrayList<>(List.of());
+
+        assert posList != null;
+        for (Tag tag : posList) {
+            IntArrayTag intArray = (IntArrayTag) ((CompoundTag)tag).get("Pos");
+
+            assert intArray != null;
+            int x = intArray.get(0).getAsInt();
+            int y = intArray.get(1).getAsInt();
+            int z = intArray.get(2).getAsInt();
+
+            blockPosList.add(new BlockPos(x,y,z));
+        }
+        assert stateList != null;
+        for (Tag tag: stateList) {
+            CompoundTag blockState = (CompoundTag) ((CompoundTag)tag).get("BlockState");
+
+            BlockState state = BlockState.CODEC.parse(NbtOps.INSTANCE, blockState)
+                    .resultOrPartial(error -> MuddysDomainFramework.LOGGER.error("Error With Blockstate of: {}", error))
+                    .orElse(Blocks.AIR.defaultBlockState());
+
+            blockStateList.add(state);
+        }
+
+        Map<BlockPos, BlockState> mappedResults = new HashMap<>();
+
+        for (int i = 0; i < blockPosList.size(); i++) {
+            mappedResults.put(blockPosList.get(i), blockStateList.get(i));
+        }
+
+        savedBlocks.clear();
+
+        savedBlocks = mappedResults;
+
+        super.readAdditionalSaveData(compoundTag);
+
+        super.readAdditionalSaveData(compoundTag);
+    }
+
+    public boolean haveOwnersBeenTeleported() {
+        return ownersHaveBeenTeleported;
+    }
+
+    public boolean isFullyExpanded() {
+        return hasExpandedFully;
+    }
+
+    public int getMaxRadius() {
+        return maxRadius;
+    }
+
+    public int getLifetime() {
+        return lifetime;
+    }
+
+    public List<UUID> getDomainOwnerUUIDList() {
+        return domainOwnerUUIDList;
+    }
+
+    public List<DomainEntity> getDomainClashParents() {
+        return domainClashParents;
+    }
 
     public static AttributeSupplier.@NotNull Builder createAttributes() {
         return AttributeSupplier.builder()
@@ -95,12 +209,25 @@ public class DomainClashEntity extends LivingEntity {
                 if (firstTimeTicked) {
                     saveDomainBlocks();
 
+                    int playerIndex = 0;
+                    int playerCount = domainOwnerUUIDList.size();
+                    int degreesPerPlayer = playerCount == 0 ? 90 : 360 / playerCount;
                     for (UUID ownerUUID : domainOwnerUUIDList) {
-                        if (!level().getPlayerByUUID(ownerUUID).equals(null)) {
+
+                        if (level().getPlayerByUUID(ownerUUID) != null) {
                             Player owner = level().getPlayerByUUID(ownerUUID);
 
+                            int x = (int) (radius * Math.cos(degreesPerPlayer * playerIndex));
+                            int z = (int) (radius * Math.sin(degreesPerPlayer * playerIndex));
 
+                            assert owner != null;
+                            owner.setPos(this.blockPosition().offset(x, 0, z).getBottomCenter());
+                            playerIndex++;
                         }
+                    }
+
+                    if (playerIndex >= playerCount) {
+                        ownersHaveBeenTeleported = true;
                     }
 
                     firstTimeTicked = false;
@@ -157,6 +284,7 @@ public class DomainClashEntity extends LivingEntity {
             if (level().getPlayerByUUID(ownerUUID) != null) {
                 Player owner = level().getPlayerByUUID(ownerUUID);
 
+                assert owner != null;
                 if (owner.isDeadOrDying() || owner.distanceTo(this) > this.maxRadius) {
                     ownersWhoDied++;
                 }
@@ -186,13 +314,13 @@ public class DomainClashEntity extends LivingEntity {
     }
 
     public void firstTicksDomainExpansion() {
-        DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius);
+        DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius, haveOwnersBeenTeleported());
 
         DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius);
     }
 
     public void domainExpansion() {
-        DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius);
+        DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius, haveOwnersBeenTeleported());
 
         DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius);
         DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius);

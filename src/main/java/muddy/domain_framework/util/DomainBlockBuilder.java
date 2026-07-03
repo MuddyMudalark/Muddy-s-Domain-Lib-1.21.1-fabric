@@ -76,7 +76,7 @@ public class DomainBlockBuilder {
         int radius = domainEntity.getExpandingRadius() - 1;
         DomainAirBlock domainAir = (DomainAirBlock) ModBlocks.DOMAIN_AIR_BLOCK;
         domainAir.of(
-                domainEntity.getIfDomainHasFullyExpanded(),
+                domainEntity.isFullyExpanded(),
                 true,
                 domainEntity.getDomainEffectLength(),
                 domainEntity.getOwnerUUID(),

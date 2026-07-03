@@ -1,6 +1,8 @@
 package muddy.domain_framework.mixin;
 
+import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.block.custom.DomainAirBlock;
+import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -51,7 +53,16 @@ public class LivingEntityMixin {
                 }
             } if (!domainAir.getHasExpandedFully()) {
                 thisEntity.setDeltaMovement(Vec3.ZERO);
+                thisEntity.setPos(entityBlockPos.getBottomCenter());
             }
+        } if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainClashAirBlock domainClashAir) {
+            if (domainClashAir.havePlayersBeenTeleported()) {
+                thisEntity.setDeltaMovement(Vec3.ZERO);
+                thisEntity.setPos(entityBlockPos.getBottomCenter());
+            } else {
+                MuddysDomainFramework.LOGGER.info("BEEP");
+            }
+
         }
     }
 }

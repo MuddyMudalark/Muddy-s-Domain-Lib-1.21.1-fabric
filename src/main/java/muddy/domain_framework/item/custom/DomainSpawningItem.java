@@ -50,7 +50,10 @@ public class DomainSpawningItem extends Item {
         domain.setDomainEffectLength(domainEffectLength);
 
         player.setDeltaMovement(Vec3.ZERO);
-        player.getCooldowns().addCooldown(this, domain.getLifetime() + 300);
+
+        if (!player.isCreative()) {
+            player.getCooldowns().addCooldown(this, domain.getLifetime() + 300);
+        }
 
         level.addFreshEntity(domain);
 

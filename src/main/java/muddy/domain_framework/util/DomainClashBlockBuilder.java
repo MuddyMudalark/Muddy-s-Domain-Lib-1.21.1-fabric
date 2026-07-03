@@ -7,9 +7,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 public class DomainClashBlockBuilder {
-    public static void buildHollowInside(Level level, BlockPos centerPos, int radius) {
+    public static void buildHollowInside(Level level, BlockPos centerPos, int radius, boolean havePlayersBeenTeleported) {
         radius -= 1;
         DomainClashAirBlock domainClashAir = (DomainClashAirBlock) ModBlocks.DOMAIN_CLASH_AIR_BLOCK;
+        domainClashAir.of(havePlayersBeenTeleported);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
