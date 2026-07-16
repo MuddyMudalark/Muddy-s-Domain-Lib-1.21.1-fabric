@@ -299,6 +299,8 @@ public class DomainClashEntity extends LivingEntity {
                                     if (player2 != null) {
                                         if (player.hurtTime > 0) {
                                             if (getLastHurtByMob() == player2) {
+                                                MuddysDomainFramework.LOGGER.info("Should be incrementing now...");
+
                                                 ((ClashScoreAccessor) player2).domain$incrementClashScore();
                                             }
                                         }

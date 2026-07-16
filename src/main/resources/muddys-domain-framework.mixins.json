@@ -3,6 +3,9 @@
   "package": "muddy.domain_framework.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "AntiChorusFruitMixin",
+    "AntiEnderpearlMixin",
+    "EntityAccessorMixin",
     "ExampleMixin",
     "LivingEntityMixin",
     "PlayerMixin"

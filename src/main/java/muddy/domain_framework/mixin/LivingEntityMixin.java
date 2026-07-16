@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ChorusFruitItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
@@ -71,7 +72,6 @@ public class LivingEntityMixin implements HasDomainExpanded {
                     thisEntity.setDeltaMovement(Vec3.ZERO);
                     thisEntity.setPos(entityBlockPos.getBottomCenter());
                 }
-
             }
         }
         if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainClashAirBlock domainClashAir) {
