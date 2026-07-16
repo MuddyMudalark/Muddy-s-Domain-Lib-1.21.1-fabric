@@ -43,11 +43,8 @@ public class DomainSpawningItem extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
         DomainEntity domain = new DomainEntity(ModEntities.DOMAIN_ENTITY, level);
-        domain.setDomainEffect(this.domainAppliedEffect);
-        domain.setPos(player.position());
-        domain.setOwner(player);
+        domain.of(domainAppliedEffect, domainEffectLength, player.position(), player, domainRadius);
         domain.setDomainRadius(domainRadius);
-        domain.setDomainEffectLength(domainEffectLength);
 
         player.setDeltaMovement(Vec3.ZERO);
 

@@ -10,10 +10,10 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 
 public class ModEffects {
-    public static final Holder<MobEffect> DOMAIN_EXPANDING;
+    public static final Holder<MobEffect> RED_BULL;
 
     static {
-        DOMAIN_EXPANDING = Registry.registerForHolder(
+        RED_BULL = Registry.registerForHolder(
                 BuiltInRegistries.MOB_EFFECT,
                 ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, "expanding-domain"),
                 new DomainEffect(MobEffectCategory.NEUTRAL, 0)

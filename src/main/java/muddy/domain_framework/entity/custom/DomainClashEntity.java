@@ -1,11 +1,21 @@
 package muddy.domain_framework.entity.custom;
 
+import com.mojang.serialization.Codec;
 import muddy.domain_framework.MuddysDomainFramework;
+import muddy.domain_framework.entity.ModEntities;
+import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
+import muddy.domain_framework.util.ClashScoreAccessor;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import muddy.domain_framework.util.DomainClashBlockBuilder;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.*;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -17,28 +27,34 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class DomainClashEntity extends LivingEntity {
     private Map<BlockPos, BlockState> savedBlocks = new HashMap<>();
+    private Map<UUID, Holder<MobEffect>> ownersAndDomainEffects = new HashMap<>();
 
     private int ticksInBetweenExpansion = 0;
 
     private int maxRadius;
     private int radius = 5;
     private int yRadius = -maxRadius;
-    private int lifetime = 1200;
+    private int lifetime = 1800;
+    private int domainLifetime = 1200;
     private int age = 0;
 
-    private List<UUID> domainOwnerUUIDList = new ArrayList<>();
     private List<DomainEntity> domainClashParents = new ArrayList<>();
+    private Map<UUID, Integer> domainEffectLengths = new HashMap<>();
+    private Player clashWinner = null;
 
     private boolean isClashing = true;
     private boolean expandTick = true;
 
-    private boolean killedAllParents = false;
     private boolean hasExpandedFully = false;
 
     private boolean firstTimeTicked = true;
@@ -48,11 +64,15 @@ public class DomainClashEntity extends LivingEntity {
         super(entityType, level);
     }
 
-    public void of(int radius, int lifetime, List<UUID> domainOwnerUUIDList, List<DomainEntity> domainClashParents, BlockPos centerPos) {
+    public void of(int radius, int lifetime, List<DomainEntity> domainEntities, BlockPos centerPos) {
         this.maxRadius = radius;
-        this.lifetime = lifetime;
-        this.domainOwnerUUIDList = domainOwnerUUIDList;
-        this.domainClashParents = domainClashParents;
+        this.domainLifetime = lifetime;
+
+        for (DomainEntity domain : domainEntities) {
+            ownersAndDomainEffects.put(domain.getOwnerUUID(), domain.getDomainEffect());
+            domainEffectLengths.put(domain.getOwnerUUID(), domain.getDomainEffectLength());
+        }
+
         this.setPos(centerPos.getCenter());
     }
 
@@ -62,10 +82,11 @@ public class DomainClashEntity extends LivingEntity {
         compoundTag.putInt("DomainRadius", this.maxRadius);
         compoundTag.putInt("DomainLifetime", this.lifetime);
         compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
-//        compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
+        compoundTag.put("DomainEffects", MobEffect.CODEC.listOf().encodeStart(NbtOps.INSTANCE, ownersAndDomainEffects.values().stream().toList()).getOrThrow());
 
-        compoundTag.put("OwnersUUIDs", UUIDUtil.CODEC.listOf().encodeStart(NbtOps.INSTANCE, this.domainOwnerUUIDList).getOrThrow());
+        compoundTag.put("OwnersUUIDs", UUIDUtil.CODEC.listOf().encodeStart(NbtOps.INSTANCE, ownersAndDomainEffects.keySet().stream().toList()).getOrThrow());
 
+        compoundTag.put("DomainEffectLengths", Codec.INT.listOf().encodeStart(NbtOps.INSTANCE, domainEffectLengths.values().stream().toList()).getOrThrow());
 
         if (this.savedBlocks != null && !this.savedBlocks.isEmpty()) {
             ListTag posList = new ListTag();
@@ -97,9 +118,14 @@ public class DomainClashEntity extends LivingEntity {
         age = compoundTag.getInt("DomainAge");
         lifetime = compoundTag.getInt("DomainLifetime");
         maxRadius = compoundTag.getInt("DomainRadius");
+        firstTimeTicked = false;
 
-        domainOwnerUUIDList = UUIDUtil.CODEC.listOf().parse(NbtOps.INSTANCE, compoundTag.get("OwnersUUIDs")).getOrThrow();
+        List<UUID> domainOwnerUUIDList = UUIDUtil.CODEC.listOf().parse(NbtOps.INSTANCE, compoundTag.get("OwnersUUIDs")).getOrThrow();
+        List<Holder<MobEffect>> domainEffects = MobEffect.CODEC.listOf().parse(NbtOps.INSTANCE, compoundTag.get("DomainEffects")).getOrThrow();
+        List<Integer> domainEffectLengths = Codec.INT.listOf().parse(NbtOps.INSTANCE, compoundTag.get("DomainEffectLengths")).getOrThrow();
 
+        listsToMap(domainOwnerUUIDList, domainEffects);
+        listsToMap(domainOwnerUUIDList, domainEffectLengths);
 
         ListTag posList = (ListTag) compoundTag.get("DomainBlocksPos");
         ListTag stateList = (ListTag) compoundTag.get("DomainBlockStates");
@@ -109,18 +135,18 @@ public class DomainClashEntity extends LivingEntity {
 
         assert posList != null;
         for (Tag tag : posList) {
-            IntArrayTag intArray = (IntArrayTag) ((CompoundTag)tag).get("Pos");
+            IntArrayTag intArray = (IntArrayTag) ((CompoundTag) tag).get("Pos");
 
             assert intArray != null;
             int x = intArray.get(0).getAsInt();
             int y = intArray.get(1).getAsInt();
             int z = intArray.get(2).getAsInt();
 
-            blockPosList.add(new BlockPos(x,y,z));
+            blockPosList.add(new BlockPos(x, y, z));
         }
         assert stateList != null;
-        for (Tag tag: stateList) {
-            CompoundTag blockState = (CompoundTag) ((CompoundTag)tag).get("BlockState");
+        for (Tag tag : stateList) {
+            CompoundTag blockState = (CompoundTag) ((CompoundTag) tag).get("BlockState");
 
             BlockState state = BlockState.CODEC.parse(NbtOps.INSTANCE, blockState)
                     .resultOrPartial(error -> MuddysDomainFramework.LOGGER.error("Error With Blockstate of: {}", error))
@@ -144,6 +170,11 @@ public class DomainClashEntity extends LivingEntity {
         super.readAdditionalSaveData(compoundTag);
     }
 
+    public static <K, V> Map<K, V> listsToMap(List<K> keys, List<V> values) {
+        return IntStream.range(0, keys.size()).boxed()
+                .collect(Collectors.toMap(keys::get, values::get));
+    }
+
     public boolean haveOwnersBeenTeleported() {
         return ownersHaveBeenTeleported;
     }
@@ -161,7 +192,7 @@ public class DomainClashEntity extends LivingEntity {
     }
 
     public List<UUID> getDomainOwnerUUIDList() {
-        return domainOwnerUUIDList;
+        return ownersAndDomainEffects.keySet().stream().toList();
     }
 
     public List<DomainEntity> getDomainClashParents() {
@@ -193,84 +224,106 @@ public class DomainClashEntity extends LivingEntity {
     @Override
     public void tick() {
         if (!level().isClientSide) {
-            if (!killedAllParents) {
-                int domainsKilledCount = 0;
 
-                for (DomainEntity domainClashParent : domainClashParents.reversed()) {
-                    domainClashParent.closeDomain();
+            if (firstTimeTicked && firstTick) {
+                saveDomainBlocks();
 
-                    domainsKilledCount++;
+                int playerIndex = 0;
+                int playerCount = ownersAndDomainEffects.size();
+                int degreesPerPlayer = playerCount == 0 ? 90 : 360 / playerCount;
+                for (UUID ownerUUID : ownersAndDomainEffects.keySet()) {
 
-                    if (domainsKilledCount == domainClashParents.size()) {
-                        killedAllParents = true;
+                    if (level().getPlayerByUUID(ownerUUID) != null) {
+                        Player owner = level().getPlayerByUUID(ownerUUID);
+
+                        int x = (int) (radius * Math.cos(degreesPerPlayer * playerIndex));
+                        int z = (int) (radius * Math.sin(degreesPerPlayer * playerIndex));
+
+                        assert owner != null;
+                        owner.setPos(this.blockPosition().offset(x, 0, z).getBottomCenter());
+                        playerIndex++;
                     }
                 }
-            } else {
-                if (firstTimeTicked) {
-                    saveDomainBlocks();
 
-                    int playerIndex = 0;
-                    int playerCount = domainOwnerUUIDList.size();
-                    int degreesPerPlayer = playerCount == 0 ? 90 : 360 / playerCount;
-                    for (UUID ownerUUID : domainOwnerUUIDList) {
+                if (playerIndex >= playerCount) {
+                    ownersHaveBeenTeleported = true;
 
-                        if (level().getPlayerByUUID(ownerUUID) != null) {
-                            Player owner = level().getPlayerByUUID(ownerUUID);
+                    DomainHasExpandedS2CPayload payload = new DomainHasExpandedS2CPayload(true);
 
-                            int x = (int) (radius * Math.cos(degreesPerPlayer * playerIndex));
-                            int z = (int) (radius * Math.sin(degreesPerPlayer * playerIndex));
-
-                            assert owner != null;
-                            owner.setPos(this.blockPosition().offset(x, 0, z).getBottomCenter());
-                            playerIndex++;
+                    for (ServerPlayer player : PlayerLookup.world((ServerLevel) level())) {
+                        if (player.distanceTo(this) <= maxRadius) {
+                            ServerPlayNetworking.send(player, payload);
                         }
                     }
+                }
 
-                    if (playerIndex >= playerCount) {
-                        ownersHaveBeenTeleported = true;
-                    }
+                firstTimeTicked = false;
+            } else {
+                if (!hasExpandedFully) {
+                    if (radius >= maxRadius) {
+                        isClashing = true;
+                        hasExpandedFully = true;
+                    } else if (expandTick) {
+                        if (radius < 10) {
+                            firstTicksDomainExpansion();
+                        } else {
+                            domainExpansion();
 
-                    firstTimeTicked = false;
-                } else {
-                    if (!hasExpandedFully) {
-                        if (radius >= maxRadius) {
-                            isClashing = true;
-                            hasExpandedFully = true;
-                        } else if (expandTick) {
-                            if (radius < 10) {
-                                firstTicksDomainExpansion();
+                            if (radius >= 13) {
+                                yRadius += 3;
                             } else {
-                                domainExpansion();
+                                yRadius += 2;
+                            }
+                        }
 
-                                if (radius >= 13) {
-                                    yRadius += 3;
-                                } else {
-                                    yRadius += 2;
+                        radius++;
+
+                        expandTick = false;
+                    } else {
+                        ticksInBetweenExpansion++;
+
+                        if (ticksInBetweenExpansion >= 4) {
+                            ticksInBetweenExpansion = 0;
+
+                            expandTick = true;
+                        }
+                    }
+                } else if (isClashing) {
+                    for (UUID ownerUUID : ownersAndDomainEffects.keySet()) {
+                        Player player = level().getPlayerByUUID(ownerUUID);
+                        if (player != null) {
+                            for (UUID ownerUUID2 : ownersAndDomainEffects.keySet()) {
+                                if (!ownerUUID.equals(ownerUUID2)) {
+                                    Player player2 = level().getPlayerByUUID(ownerUUID2);
+
+                                    if (player2 != null) {
+                                        if (player.hurtTime > 0) {
+                                            if (getLastHurtByMob() == player2) {
+                                                ((ClashScoreAccessor) player2).domain$incrementClashScore();
+                                            }
+                                        }
+                                    }
                                 }
                             }
-
-                            radius++;
-
-                            expandTick = false;
-                        } else {
-                            ticksInBetweenExpansion++;
-
-                            if (ticksInBetweenExpansion >= 4) {
-                                ticksInBetweenExpansion = 0;
-
-                                expandTick = true;
-                            }
                         }
-                    } else if (isClashing) {
-                        age++;
+
+                        if (((ClashScoreAccessor) player).domain$getClashScore() >= 10) {
+                            clashWinner = player;
+
+                            endDomainClashWithWinner();
+                        }
                     }
+
+                    age++;
                 }
             }
 
+
             if (age >= lifetime || isDeadOrDying()) {
-                closeDomain();
-            } if (ownersAllDieCauseDomainClashToEnd()) {
-                closeDomain();
+                replaceDomainSpace();
+            }
+            if (ownersAllDieCauseDomainClashToEnd()) {
+                replaceDomainSpace();
             }
 
         }
@@ -280,7 +333,7 @@ public class DomainClashEntity extends LivingEntity {
 
     private boolean ownersAllDieCauseDomainClashToEnd() {
         int ownersWhoDied = 0;
-        for (UUID ownerUUID : domainOwnerUUIDList) {
+        for (UUID ownerUUID : ownersAndDomainEffects.keySet()) {
             if (level().getPlayerByUUID(ownerUUID) != null) {
                 Player owner = level().getPlayerByUUID(ownerUUID);
 
@@ -291,7 +344,7 @@ public class DomainClashEntity extends LivingEntity {
             }
         }
 
-        return ownersWhoDied >= domainOwnerUUIDList.size();
+        return ownersWhoDied >= ownersAndDomainEffects.size();
     }
 
     public void saveDomainBlocks() {
@@ -319,6 +372,32 @@ public class DomainClashEntity extends LivingEntity {
         DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius);
     }
 
+    public void endDomainClashWithWinner() {
+        for (Map.Entry<BlockPos, BlockState> entry : savedBlocks.entrySet()) {
+            BlockPos savedBlockPos = entry.getKey();
+            BlockState oldState = entry.getValue();
+
+            level().setBlockAndUpdate(savedBlockPos, oldState);
+        }
+
+        DomainHasExpandedS2CPayload payload = new DomainHasExpandedS2CPayload(false);
+
+        for (ServerPlayer player : PlayerLookup.world((ServerLevel) level())) {
+            if (player.distanceTo(this) <= maxRadius) {
+                ServerPlayNetworking.send(player, payload);
+            }
+        }
+
+        UUID winnerUUID = clashWinner.getUUID();
+
+        DomainEntity domainEntity = new DomainEntity(ModEntities.DOMAIN_ENTITY, level());
+        domainEntity.of(ownersAndDomainEffects.get(winnerUUID), domainEffectLengths.get(winnerUUID), position(), clashWinner, maxRadius, domainLifetime, true);
+
+        level().addFreshEntity(domainEntity);
+
+        this.remove(RemovalReason.DISCARDED);
+    }
+
     public void domainExpansion() {
         DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius, haveOwnersBeenTeleported());
 
@@ -326,12 +405,20 @@ public class DomainClashEntity extends LivingEntity {
         DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius);
     }
 
-    public void closeDomain() {
+    public void replaceDomainSpace() {
         for (Map.Entry<BlockPos, BlockState> entry : savedBlocks.entrySet()) {
             BlockPos savedBlockPos = entry.getKey();
             BlockState oldState = entry.getValue();
 
             level().setBlockAndUpdate(savedBlockPos, oldState);
+        }
+
+        DomainHasExpandedS2CPayload payload = new DomainHasExpandedS2CPayload(false);
+
+        for (ServerPlayer player : PlayerLookup.world((ServerLevel) level())) {
+            if (player.distanceTo(this) <= maxRadius) {
+                ServerPlayNetworking.send(player, payload);
+            }
         }
 
         this.remove(RemovalReason.DISCARDED);
@@ -340,6 +427,11 @@ public class DomainClashEntity extends LivingEntity {
     @Override
     public boolean canBeCollidedWith() {
         return false;
+    }
+
+    @Override
+    protected @NotNull AABB makeBoundingBox() {
+        return AABB.ofSize(Vec3.ZERO, 0, 0, 0);
     }
 
     @Override

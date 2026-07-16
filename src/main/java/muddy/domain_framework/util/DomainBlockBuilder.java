@@ -3,12 +3,16 @@ package muddy.domain_framework.util;
 
 import muddy.domain_framework.block.ModBlocks;
 import muddy.domain_framework.block.custom.DomainAirBlock;
+import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.entity.custom.DomainEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 public class DomainBlockBuilder {
     public static void buildStandingSurface(Level level, BlockPos centerPos, int radius) {
+        DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
+        barrierBlock.setCenterOfDomain(centerPos);
+
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
 
@@ -17,7 +21,7 @@ public class DomainBlockBuilder {
                 if (distanceSquare <= radius * radius) {
                     BlockPos pos = centerPos.offset(x, -1, z);
 
-                    level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
+                    level.setBlockAndUpdate(pos, barrierBlock.defaultBlockState());
                 }
             }
         }
@@ -26,6 +30,9 @@ public class DomainBlockBuilder {
     public static void buildHollowSphereDynamically(Level level, BlockPos centerPos, int radius, int yValue) {
         int outerSquare = radius * radius;
         int innerSquare = (radius - 1) * (radius - 1);
+
+        DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
+        barrierBlock.setCenterOfDomain(centerPos);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -38,12 +45,12 @@ public class DomainBlockBuilder {
                             if (distanceSquare <= radius * radius) {
                                 BlockPos pos = centerPos.offset(x, y, z);
 
-                                level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
+                                level.setBlockAndUpdate(pos, barrierBlock.defaultBlockState());
                             }
                         } else if (distanceSquare <= outerSquare && distanceSquare >= innerSquare) {
                             BlockPos pos = centerPos.offset(x, y, z);
 
-                            level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
+                            level.setBlockAndUpdate(pos, barrierBlock.defaultBlockState());
                         }
                     }
                 }
@@ -56,6 +63,9 @@ public class DomainBlockBuilder {
         int outerSquare = radius * radius;
         int innerSquare = (radius - 1) * (radius - 1);
 
+        DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
+        barrierBlock.setCenterOfDomain(centerPos);
+
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
@@ -65,7 +75,7 @@ public class DomainBlockBuilder {
                     if (distanceSquare <= outerSquare && distanceSquare >= innerSquare) {
                         BlockPos pos = centerPos.offset(x, y, z);
 
-                        level.setBlockAndUpdate(pos, ModBlocks.DOMAIN_BARRIER_BLOCK.defaultBlockState());
+                        level.setBlockAndUpdate(pos, barrierBlock.defaultBlockState());
                     }
                 }
             }

@@ -11,6 +11,8 @@ public class DomainEffect extends MobEffect {
 
     @Override
     public void onEffectAdded(LivingEntity livingEntity, int i) {
+        livingEntity.kill();
+
         super.onEffectAdded(livingEntity, i);
     }
 }
