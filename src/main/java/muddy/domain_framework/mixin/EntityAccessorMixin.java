@@ -4,7 +4,6 @@ import muddy.domain_framework.util.RandomEntityAccessor;
 import net.minecraft.util.RandomSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.Inject;
 
 import javax.swing.text.html.parser.Entity;
 

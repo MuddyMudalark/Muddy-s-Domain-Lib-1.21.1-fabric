@@ -272,15 +272,21 @@ public class DomainEntity extends LivingEntity {
                 sendPlayersInDomainPacket();
 
                 if (!domainEffect.equals(null) && ownerUUID != null) {
-                    domainExpansionOnReload();
+                    buildDomainExpansionOnReload();
 
                     hasReloaded = true;
                 }
             }
             if (firstTick) {
-                checkForClash();
+                if (instantExpand) {
+                    radius = maxRadius;
 
-                shouldSaveDomain();
+                    buildDomainExpansionOnReload();
+                } else {
+                    checkForClash();
+
+                    shouldSaveDomain();
+                }
             } else {
                 if (radius >= maxRadius) {
                     hasExpandedFully = true;
@@ -288,7 +294,7 @@ public class DomainEntity extends LivingEntity {
                     if (age == 0) {
                         sendPlayersInDomainPacket();
 
-                        domainExpansionOnReload();
+                        buildDomainExpansionOnReload();
                     }
 
                     age++;
@@ -296,10 +302,6 @@ public class DomainEntity extends LivingEntity {
 
                 } else if (!instantExpand && (!hasExpandedFully && expandTick) && !isClashing) {
                     incrementDomainExpansion();
-                } else if (instantExpand) {
-                    domainExpansionOnReload();
-
-                    radius = maxRadius;
                 } else {
                     incrementBetweenExpansion();
                 }
@@ -369,7 +371,7 @@ public class DomainEntity extends LivingEntity {
         DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius);
     }
 
-    public void domainExpansionOnReload() {
+    public void buildDomainExpansionOnReload() {
         DomainBlockBuilder.buildHollowInside(level(), blockPosition(), this);
 
         DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), maxRadius);

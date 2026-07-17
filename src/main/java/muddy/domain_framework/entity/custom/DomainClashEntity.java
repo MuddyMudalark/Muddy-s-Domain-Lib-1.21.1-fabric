@@ -7,8 +7,12 @@ import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
 import muddy.domain_framework.util.ClashScoreAccessor;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import muddy.domain_framework.util.DomainClashBlockBuilder;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.commands.CommandResultCallback;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
@@ -24,6 +28,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -39,13 +44,16 @@ public class DomainClashEntity extends LivingEntity {
     private Map<BlockPos, BlockState> savedBlocks = new HashMap<>();
     private Map<UUID, Holder<MobEffect>> ownersAndDomainEffects = new HashMap<>();
 
+    GameRules gam = level().getGameRules();
+
     private int ticksInBetweenExpansion = 0;
 
     private int maxRadius;
     private int radius = 5;
     private int yRadius = -maxRadius;
-    private int lifetime = 1800;
+    private int lifetime = 2400;
     private int domainLifetime = 1200;
+
     private int age = 0;
 
     private List<DomainEntity> domainClashParents = new ArrayList<>();
@@ -59,6 +67,7 @@ public class DomainClashEntity extends LivingEntity {
 
     private boolean firstTimeTicked = true;
     private boolean ownersHaveBeenTeleported = false;
+    private boolean tickedHurt = false;
 
     public DomainClashEntity(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -72,6 +81,11 @@ public class DomainClashEntity extends LivingEntity {
             ownersAndDomainEffects.put(domain.getOwnerUUID(), domain.getDomainEffect());
             domainEffectLengths.put(domain.getOwnerUUID(), domain.getDomainEffectLength());
         }
+
+        MuddysDomainFramework.LOGGER.info("Max Radius is: {}", radius);
+        MuddysDomainFramework.LOGGER.info("Lifetime is: {}", lifetime);
+        MuddysDomainFramework.LOGGER.info("Domain Entities are: {}", domainEntities);
+        MuddysDomainFramework.LOGGER.info("Domain's position is: {}", centerPos);
 
         this.setPos(centerPos.getCenter());
     }
@@ -224,7 +238,6 @@ public class DomainClashEntity extends LivingEntity {
     @Override
     public void tick() {
         if (!level().isClientSide) {
-
             if (firstTimeTicked && firstTick) {
                 saveDomainBlocks();
 
@@ -289,6 +302,7 @@ public class DomainClashEntity extends LivingEntity {
                         }
                     }
                 } else if (isClashing) {
+//                    MuddysDomainFramework.LOGGER.info("Beep (Clashing)");
                     for (UUID ownerUUID : ownersAndDomainEffects.keySet()) {
                         Player player = level().getPlayerByUUID(ownerUUID);
                         if (player != null) {
@@ -296,10 +310,10 @@ public class DomainClashEntity extends LivingEntity {
                                 if (!ownerUUID.equals(ownerUUID2)) {
                                     Player player2 = level().getPlayerByUUID(ownerUUID2);
 
-                                    if (player2 != null) {
-                                        if (player.hurtTime > 0) {
-                                            if (getLastHurtByMob() == player2) {
-                                                MuddysDomainFramework.LOGGER.info("Should be incrementing now...");
+                                    if (player2 != null && player != null) {
+                                        if (player.hurtTime == 1) {
+                                            if (player.getLastHurtByMob() == player2) {
+                                                MuddysDomainFramework.LOGGER.info("Should increment player: {}", player2.getName().getString());
 
                                                 ((ClashScoreAccessor) player2).domain$incrementClashScore();
                                             }
@@ -307,13 +321,15 @@ public class DomainClashEntity extends LivingEntity {
                                     }
                                 }
                             }
+
+                            if (((ClashScoreAccessor) player).domain$getClashScore() >= 10) {
+                                clashWinner = player;
+
+                                endDomainClashWithWinner();
+                            }
                         }
 
-                        if (((ClashScoreAccessor) player).domain$getClashScore() >= 10) {
-                            clashWinner = player;
 
-                            endDomainClashWithWinner();
-                        }
                     }
 
                     age++;
@@ -395,9 +411,11 @@ public class DomainClashEntity extends LivingEntity {
         DomainEntity domainEntity = new DomainEntity(ModEntities.DOMAIN_ENTITY, level());
         domainEntity.of(ownersAndDomainEffects.get(winnerUUID), domainEffectLengths.get(winnerUUID), position(), clashWinner, maxRadius, domainLifetime, true);
 
+        clashWinner.setPos(this.position());
+
         level().addFreshEntity(domainEntity);
 
-        this.remove(RemovalReason.DISCARDED);
+        replaceDomainSpace();
     }
 
     public void domainExpansion() {
@@ -421,6 +439,15 @@ public class DomainClashEntity extends LivingEntity {
             if (player.distanceTo(this) <= maxRadius) {
                 ServerPlayNetworking.send(player, payload);
             }
+        }
+
+        for (UUID playerUUID : ownersAndDomainEffects.keySet().stream().toList()) {
+            Player player = level().getPlayerByUUID(playerUUID);
+
+            if (player != null) {
+                ((ClashScoreAccessor) player).domain$setClashScore(0);
+            }
+
         }
 
         this.remove(RemovalReason.DISCARDED);
