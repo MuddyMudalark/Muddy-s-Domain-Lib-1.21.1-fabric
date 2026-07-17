@@ -37,7 +37,7 @@ public class PlayerMixin implements ClashScoreAccessor {
     public void domain$incrementClashScore() {
         Player thisPlayer = ((Player)(Object)this);
 
-        thisPlayer.displayClientMessage(Component.literal("Your Dominance is at: ".concat((domain$getClashScore()/10)*100+"%")), true);
+        thisPlayer.displayClientMessage(Component.literal("Your Dominance is at: ".concat((clashScore*10+1)+"%")), true);
 
         clashScore++;
     }

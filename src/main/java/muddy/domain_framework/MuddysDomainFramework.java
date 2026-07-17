@@ -8,7 +8,6 @@ import muddy.domain_framework.entity.custom.DomainEntity;
 import muddy.domain_framework.item.ModItems;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
 import net.fabricmc.api.ModInitializer;
-
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.resources.ResourceLocation;
@@ -18,9 +17,9 @@ import org.slf4j.LoggerFactory;
 
 public class MuddysDomainFramework implements ModInitializer {
     public static final String MOD_ID = "muddys-domain-framework";
-
-
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    public int clashLifetime = 2400;
 
     @Override
     public void onInitialize() {
