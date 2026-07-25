@@ -35,7 +35,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class DomainEntity extends LivingEntity {
-    ;
+    public static int DEFAULT_LIFETIME = 200;
+
     private Map<BlockPos, BlockState> savedBlocks = new HashMap<>();
 
     private Holder<MobEffect> domainEffect;
@@ -67,7 +68,7 @@ public class DomainEntity extends LivingEntity {
     }
 
     public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius) {
-        of(domainEffect, domainEffectLength, position, owner, maxRadius, 200, false);
+        of(domainEffect, domainEffectLength, position, owner, maxRadius, 200);
     }
 
     public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime) {
@@ -75,12 +76,19 @@ public class DomainEntity extends LivingEntity {
     }
 
     public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, boolean instantExpand) {
+        of(domainEffect, domainEffectLength, position, owner, maxRadius, lifetime, new HashMap<>(), instantExpand);
+    }
+
+    public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, boolean instantExpand) {
         this.domainEffect = domainEffect;
         this.domainEffectLength = domainEffectLength;
         this.setPos(position);
         this.setOwner(owner);
-        this.maxRadius = radius;
+        this.maxRadius = maxRadius;
+        this.lifetime = lifetime;
         this.instantExpand = instantExpand;
+
+        this.savedBlocks.putAll(savedBlocks);
     }
 
     public static AttributeSupplier.@NotNull Builder createAttributes() {

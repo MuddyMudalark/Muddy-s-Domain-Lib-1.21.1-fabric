@@ -4,9 +4,7 @@ import muddy.domain_framework.util.ClashScoreAccessor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -37,7 +35,7 @@ public class PlayerMixin implements ClashScoreAccessor {
     public void domain$incrementClashScore() {
         Player thisPlayer = ((Player)(Object)this);
 
-        thisPlayer.displayClientMessage(Component.literal("Your Dominance is at: ".concat((clashScore*10+1)+"%")), true);
+        thisPlayer.displayClientMessage(Component.literal("Your Dominance is at: ".concat((clashScore*10+10)+"%")), true);
 
         clashScore++;
     }

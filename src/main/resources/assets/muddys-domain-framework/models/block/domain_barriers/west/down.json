@@ -1,0 +1,16 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "east": "#outside",
+    "south": "#outside",
+    "down": "#inside",
+
+    "west": "#inside",
+    "north": "#outside",
+    "up": "#outside",
+
+    "inside": "muddys-domain-framework:block/domain_barrier_inside",
+    "outside": "muddys-domain-framework:block/domain_barrier",
+    "particle": "muddys-domain-framework:block/domain_barrier"
+  }
+}

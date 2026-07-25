@@ -60,14 +60,7 @@ public class LivingEntityMixin implements HasDomainExpanded {
                     }
                 }
             }
-            if (level.isClientSide()) {
-                if (thisEntity instanceof Player player) {
-                    if (!domain$hasDomainExpanded()) {
-                        player.setDeltaMovement(Vec3.ZERO);
-                        player.setPos(entityBlockPos.getBottomCenter());
-                    }
-                }
-            } else {
+            if (!level.isClientSide()) {
                 if (!domainAir.getHasExpandedFully()) {
                     thisEntity.setDeltaMovement(Vec3.ZERO);
                     thisEntity.setPos(entityBlockPos.getBottomCenter());
@@ -75,20 +68,10 @@ public class LivingEntityMixin implements HasDomainExpanded {
             }
         }
         if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainClashAirBlock domainClashAir) {
-            if (domainClashAir.havePlayersBeenTeleported()) {
-                if (level.isClientSide()) {
-                    if (thisEntity instanceof Player player) {
-                        if (!domain$hasDomainExpanded()) {
-                            player.setDeltaMovement(Vec3.ZERO);
-                            player.setPos(entityBlockPos.getBottomCenter());
-                        }
-                    }
-                } else {
-                    if (!domainClashAir.havePlayersBeenTeleported()) {
-                        thisEntity.setDeltaMovement(Vec3.ZERO);
-                        thisEntity.setPos(entityBlockPos.getBottomCenter());
-                    }
-
+            if (!level.isClientSide()) {
+                if (!domainClashAir.havePlayersBeenTeleported()) {
+                    thisEntity.setDeltaMovement(Vec3.ZERO);
+                    thisEntity.setPos(entityBlockPos.getBottomCenter());
                 }
             }
         }

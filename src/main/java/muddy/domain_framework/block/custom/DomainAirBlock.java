@@ -3,6 +3,7 @@ package muddy.domain_framework.block.custom;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.level.block.AirBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.UUID;
 
@@ -23,6 +24,10 @@ public class DomainAirBlock extends AirBlock {
 
     public boolean getHasExpandedFully() {
         return hasExpandedFully;
+    }
+
+    protected boolean isDomainAir(BlockState blockState) {
+        return true;
     }
 
     public void setHasExpandedFully(boolean hasExpandedFully) {

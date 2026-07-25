@@ -1,11 +1,15 @@
 package muddy.domain_framework.item.custom;
 
+import muddy.domain_framework.block.custom.DomainAirBlock;
+import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import muddy.domain_framework.entity.ModEntities;
 import muddy.domain_framework.entity.custom.DomainEntity;
+import muddy.domain_framework.util.HasDomainExpanded;
 import net.minecraft.core.Holder;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -17,6 +21,8 @@ public class DomainSpawningItem extends Item {
     private final Holder<MobEffect> domainAppliedEffect;
     private int domainRadius = 18;
     private int domainEffectLength = 40;
+
+    private DomainEntity domain = null;
 
     public int getDomainEffectLength() {
         return domainEffectLength;
@@ -41,8 +47,21 @@ public class DomainSpawningItem extends Item {
     }
 
     @Override
+    public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int i, boolean bl) {
+        if(entity instanceof Player player) {
+            if (((HasDomainExpanded)player).domain$hasDomainExpanded() && !(player.isCreative() || player.isSpectator())) {
+                if (domain != null && domain.getOwner().equals(player)) {
+                    player.getCooldowns().addCooldown(this, DomainEntity.DEFAULT_LIFETIME + 1000);
+                }
+            }
+        }
+
+        super.inventoryTick(itemStack, level, entity, i, bl);
+    }
+
+    @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
-        DomainEntity domain = new DomainEntity(ModEntities.DOMAIN_ENTITY, level);
+        domain = new DomainEntity(ModEntities.DOMAIN_ENTITY, level);
         domain.of(domainAppliedEffect, domainEffectLength, player.position(), player, domainRadius);
         domain.setDomainRadius(domainRadius);
 

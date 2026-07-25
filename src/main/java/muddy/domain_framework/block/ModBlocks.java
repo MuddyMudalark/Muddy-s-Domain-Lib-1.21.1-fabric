@@ -28,19 +28,19 @@ public class ModBlocks {
     public static final Block DOMAIN_BARRIER_BLOCK = register(
             new DomainBarrierBlock(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F).lightLevel((blockState) -> 15)),
             "domain_barrier",
-            false
+            true
     );
 
     public static final Block DOMAIN_AIR_BLOCK = register(
             new DomainAirBlock(BlockBehaviour.Properties.of().lightLevel((blockState) -> 15)),
             "domain_air",
-            false
+            true
     );
 
     public static final Block DOMAIN_CLASH_AIR_BLOCK = register(
             new DomainClashAirBlock(BlockBehaviour.Properties.of().lightLevel((blockState) -> 15)),
             "domain_clash_air",
-            false
+            true
     );
 
     public static void initialize() {

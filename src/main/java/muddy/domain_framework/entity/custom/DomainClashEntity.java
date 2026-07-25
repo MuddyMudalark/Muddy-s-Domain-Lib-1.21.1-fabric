@@ -7,12 +7,8 @@ import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
 import muddy.domain_framework.util.ClashScoreAccessor;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import muddy.domain_framework.util.DomainClashBlockBuilder;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.commands.CommandResultCallback;
-import net.minecraft.commands.CommandSource;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
@@ -313,7 +309,6 @@ public class DomainClashEntity extends LivingEntity {
                                     if (player2 != null && player != null) {
                                         if (player.hurtTime == 1) {
                                             if (player.getLastHurtByMob() == player2) {
-                                                MuddysDomainFramework.LOGGER.info("Should increment player: {}", player2.getName().getString());
 
                                                 ((ClashScoreAccessor) player2).domain$incrementClashScore();
                                             }
@@ -338,9 +333,13 @@ public class DomainClashEntity extends LivingEntity {
 
 
             if (age >= lifetime || isDeadOrDying()) {
+                MuddysDomainFramework.LOGGER.info("You're taking too long");
+
                 replaceDomainSpace();
             }
             if (ownersAllDieCauseDomainClashToEnd()) {
+                MuddysDomainFramework.LOGGER.info("You are dead lmao");
+
                 replaceDomainSpace();
             }
 
@@ -409,7 +408,7 @@ public class DomainClashEntity extends LivingEntity {
         UUID winnerUUID = clashWinner.getUUID();
 
         DomainEntity domainEntity = new DomainEntity(ModEntities.DOMAIN_ENTITY, level());
-        domainEntity.of(ownersAndDomainEffects.get(winnerUUID), domainEffectLengths.get(winnerUUID), position(), clashWinner, maxRadius, domainLifetime, true);
+        domainEntity.of(ownersAndDomainEffects.get(winnerUUID), domainEffectLengths.get(winnerUUID), position(), clashWinner, maxRadius, domainLifetime, savedBlocks, true);
 
         clashWinner.setPos(this.position());
 

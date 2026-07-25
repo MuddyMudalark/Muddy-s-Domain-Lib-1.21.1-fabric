@@ -1,5 +1,70 @@
 {
   "variants": {
-    "": { "model": "muddys-domain-framework:block/domain_barrier" }
+    "pos_x=false,pos_y=false,pos_z=false,min_x=false,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barrier"
+    },
+
+    "pos_x=false,pos_y=true,pos_z=false,min_x=false,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/up"
+    },
+
+    "pos_x=false,pos_y=false,pos_z=false,min_x=false,min_y=true,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/down"
+    },
+
+
+    "pos_x=true,pos_y=false,pos_z=false,min_x=false,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/east"
+    },
+    "pos_x=true,pos_y=false,pos_z=true,min_x=false,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/east/south"
+    },
+    "pos_x=true,pos_y=false,pos_z=false,min_x=false,min_y=false,min_z=true": {
+      "model": "muddys-domain-framework:block/domain_barriers/east/north"
+    },
+    "pos_x=true,pos_y=false,pos_z=false,min_x=false,min_y=true,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/east/down"
+    },
+    "pos_x=true,pos_y=false,pos_z=true,min_x=false,min_y=true,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/east/south_down"
+    },
+    "pos_x=true,pos_y=false,pos_z=false,min_x=false,min_y=true,min_z=true": {
+      "model": "muddys-domain-framework:block/domain_barriers/east/north_down"
+    },
+
+
+    "pos_x=false,pos_y=false,pos_z=false,min_x=true,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/west"
+    },
+    "pos_x=false,pos_y=false,pos_z=true,min_x=true,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/west/south"
+    },
+    "pos_x=false,pos_y=false,pos_z=false,min_x=true,min_y=false,min_z=true": {
+      "model": "muddys-domain-framework:block/domain_barriers/west/north"
+    },
+    "pos_x=false,pos_y=false,pos_z=false,min_x=true,min_y=true,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/west/down"
+    },
+    "pos_x=false,pos_y=false,pos_z=true,min_x=true,min_y=true,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/west/south_down"
+    },
+    "pos_x=false,pos_y=false,pos_z=false,min_x=true,min_y=true,min_z=true": {
+      "model": "muddys-domain-framework:block/domain_barriers/west/north_down"
+    },
+
+
+    "pos_x=false,pos_y=false,pos_z=true,min_x=false,min_y=false,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/south"
+    },
+    "pos_x=false,pos_y=false,pos_z=true,min_x=false,min_y=true,min_z=false": {
+      "model": "muddys-domain-framework:block/domain_barriers/south/down"
+    },
+
+    "pos_x=false,pos_y=false,pos_z=false,min_x=false,min_y=false,min_z=true": {
+      "model": "muddys-domain-framework:block/domain_barriers/north"
+    },
+    "pos_x=false,pos_y=false,pos_z=false,min_x=false,min_y=true,min_z=true": {
+      "model": "muddys-domain-framework:block/domain_barriers/north/down"
+    }
   }
 }
