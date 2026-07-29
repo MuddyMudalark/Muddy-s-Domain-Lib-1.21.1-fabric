@@ -35,7 +35,6 @@ public class LivingEntityMixin implements HasDomainExpanded {
         }
     }
 
-
     @Unique
     public void domain$inDomainAirBlock(Level level) {
         LivingEntity thisEntity = ((LivingEntity) (Object) this);

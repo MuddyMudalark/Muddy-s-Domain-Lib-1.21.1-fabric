@@ -177,24 +177,9 @@ public class DomainEntity extends LivingEntity {
             compoundTag.putUUID("Owner", this.owner.getUUID());
         }
 
-        if (this.savedBlocks != null && !this.savedBlocks.isEmpty()) {
-            ListTag posList = new ListTag();
-            ListTag stateList = new ListTag();
-
-            for (Map.Entry<BlockPos, BlockState> block : savedBlocks.entrySet()) {
-                CompoundTag posEntry = new CompoundTag();
-                CompoundTag stateEntry = new CompoundTag();
-
-                posEntry.put("Pos", BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, block.getKey()).getOrThrow());
-
-                stateEntry.put("BlockState", BlockState.CODEC.encodeStart(NbtOps.INSTANCE, block.getValue()).getOrThrow());
-
-                posList.add(posEntry);
-                stateList.add(stateEntry);
-            }
-
-            compoundTag.put("DomainBlocksPos", posList);
-            compoundTag.put("DomainBlockStates", stateList);
+        if (!this.savedBlocks.isEmpty()) {
+            compoundTag.put("DomainBlocksPos", BlockPos.CODEC.listOf().encodeStart(NbtOps.INSTANCE, savedBlocks.keySet().stream().toList()).getOrThrow());
+            compoundTag.put("DomainBlockStates", BlockState.CODEC.listOf().encodeStart(NbtOps.INSTANCE, savedBlocks.values().stream().toList()).getOrThrow());
 
         }
 
@@ -212,51 +197,28 @@ public class DomainEntity extends LivingEntity {
                 .resultOrPartial(error -> MuddysDomainFramework.LOGGER.info("The Overall Effect This Code Has on me is: {}", error))
                 .orElse(MobEffects.LEVITATION);
 
-        if (compoundTag.getUUID("Owner").equals(null)) {
-            this.discard();
-        } else {
-            this.ownerUUID = compoundTag.getUUID("Owner");
+        this.ownerUUID = compoundTag.getUUID("Owner");
+
+        List<BlockPos> blockPosList = BlockPos.CODEC.listOf().parse(
+                NbtOps.INSTANCE, compoundTag.get("DomainBlocksPos")).resultOrPartial(
+                        error -> MuddysDomainFramework.LOGGER.info("What the scallop BlockPos List? {}", error))
+                .orElse(List.of(BlockPos.ZERO));
+
+        List<BlockState> blockStateList = BlockState.CODEC.listOf().parse(NbtOps.INSTANCE, compoundTag.get("DomainBlockStates")).resultOrPartial(
+                    error -> MuddysDomainFramework.LOGGER.info("What the scallop BlockState List? {}", error))
+                .orElse(List.of(Blocks.AIR.defaultBlockState()));
+
+        Map<BlockPos, BlockState> mappedResults = new HashMap<>();
+
+        if (blockPosList.size() == blockStateList.size()) {
+            MuddysDomainFramework.LOGGER.info("both lists are equal in length");
         }
 
-
-        ListTag posList = compoundTag.get("DomainBlocksPos") == null ? new ListTag() : (ListTag) compoundTag.get("DomainBlockPos");
-        ListTag stateList = compoundTag.get("DomainBlockStates") == null ? new ListTag() : (ListTag) compoundTag.get("DomainBlockStates");
-
-        List<BlockPos> blockPosList = new ArrayList<>(List.of());
-        List<BlockState> blockStateList = new ArrayList<>(List.of());
-
-        if (!(Arrays.stream(posList.toArray()).toList().isEmpty() || Arrays.stream(stateList.toArray()).toList().isEmpty())) {
-            for (Tag tag : posList) {
-                IntArrayTag intArray = (IntArrayTag) ((CompoundTag) tag).get("Pos");
-
-                int x = intArray.get(0).getAsInt();
-                int y = intArray.get(1).getAsInt();
-                int z = intArray.get(2).getAsInt();
-
-                blockPosList.add(new BlockPos(x, y, z));
-            }
-            for (Tag tag : stateList) {
-                CompoundTag blockState = (CompoundTag) ((CompoundTag) tag).get("BlockState");
-
-                BlockState state = BlockState.CODEC.parse(NbtOps.INSTANCE, blockState)
-                        .resultOrPartial(error -> MuddysDomainFramework.LOGGER.error("AHHHH WHAT THE FUCK STOP ERRORING YOU STUPID BLOCKSTATE: {}", error))
-                        .orElse(Blocks.AIR.defaultBlockState());
-
-                blockStateList.add(state);
-            }
-
-            Map<BlockPos, BlockState> mappedResults = new HashMap<>();
-
-            for (int i = 0; i < blockPosList.size(); i++) {
-                mappedResults.put(blockPosList.get(i), blockStateList.get(i));
-            }
-
-            savedBlocks.clear();
-
-            savedBlocks = mappedResults;
-        } else {
-            savedBlocks.clear();
+        for (int index = 0; index < blockPosList.size(); index++) {
+            mappedResults.put(blockPosList.get(index), blockStateList.get(index));
         }
+
+        savedBlocks = mappedResults;
 
         super.readAdditionalSaveData(compoundTag);
     }
