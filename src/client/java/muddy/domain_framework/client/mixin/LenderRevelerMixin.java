@@ -3,7 +3,6 @@ package muddy.domain_framework.client.mixin;
 import muddy.domain_framework.client.render.ModRenderTypes;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -30,7 +29,7 @@ public class LenderRevelerMixin {
     private void renderSectionLayer(RenderType renderType, double d, double e, double f, Matrix4f matrix4f, Matrix4f matrix4f2) {}
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
-    public void renderLevel(
+    public void domain$renderLevel(
             DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci
     ) {
         assert this.level != null;

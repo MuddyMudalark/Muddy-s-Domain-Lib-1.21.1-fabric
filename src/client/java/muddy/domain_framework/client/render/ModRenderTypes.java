@@ -18,7 +18,7 @@ public class ModRenderTypes {
             "domain_inside",
             DefaultVertexFormat.POSITION,
             VertexFormat.Mode.QUADS,
-            1536,
+            0x600,
             false,
             false,
             RenderType.CompositeState.builder()
