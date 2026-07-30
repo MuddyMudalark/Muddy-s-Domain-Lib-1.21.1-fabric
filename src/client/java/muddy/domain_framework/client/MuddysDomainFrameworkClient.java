@@ -12,18 +12,13 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
-import org.apache.commons.lang3.function.Consumers;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Consumer;
 
 public class MuddysDomainFrameworkClient implements ClientModInitializer {
 	@Nullable
-	private static ShaderInstance rendertypeSolidShader;
+	public static ShaderInstance DOMAIN_SHADER;
 
 	@Override
 	public void onInitializeClient() {
@@ -31,17 +26,16 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.DOMAIN_ENTITY, DomainRenderer::new);
 		EntityRendererRegistry.register(ModEntities.DOMAIN_CLASH_ENTITY, DomainClashRenderer::new);
 
-//		CoreShaderRegistrationCallback.EVENT.register(
-//				ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, ShaderInstance.SHADER_PATH),
-//				context -> {
-//			context.register(ResourceLocation.fromNamespaceAndPath(
-//					MuddysDomainFramework.MOD_ID,
-//					"rendertype_solid_end"),
-//					DefaultVertexFormat.BLOCK,
-//                    shaderInstance -> {
-//
-//					});
-//		});
+		CoreShaderRegistrationCallback.EVENT.register(context -> {
+            context.register(
+                ResourceLocation.fromNamespaceAndPath(
+                    MuddysDomainFramework.MOD_ID,
+                    "rendertype_solid_end"
+                ),
+                DefaultVertexFormat.BLOCK,
+                shader -> DOMAIN_SHADER = shader
+            );
+        });
 
 
 		ClientPlayNetworking.registerGlobalReceiver(DomainHasExpandedS2CPayload.ID, (payload, context) -> {
