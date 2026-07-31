@@ -2,42 +2,50 @@ package muddy.domain_framework.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.client.MuddysDomainFrameworkClient;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.TheEndPortalRenderer;
+import net.minecraft.resources.ResourceLocation;
 
 @Environment(EnvType.CLIENT)
-public class ModRenderTypes {
-    private static final RenderStateShard.ShaderStateShard DOMAIN_SHADER =
+public class ModRenderTypes extends RenderType {
+    public ModRenderTypes(String string, VertexFormat vertexFormat, VertexFormat.Mode mode, int i, boolean bl, boolean bl2, Runnable runnable, Runnable runnable2) {
+        super(string, vertexFormat, mode, i, bl, bl2, runnable, runnable2);
+    }
+
+    private static final ResourceLocation DOMAIN_LAYER_1 =
+            ResourceLocation.withDefaultNamespace("textures/entity/end_portal.png");
+
+    private static final ResourceLocation DOMAIN_LAYER_0 =
+            ResourceLocation.withDefaultNamespace("textures/environment/end_sky.png");
+
+    public static final RenderStateShard.ShaderStateShard DOMAIN_SHADER =
             new RenderStateShard.ShaderStateShard(() -> MuddysDomainFrameworkClient.DOMAIN_SHADER);
 
-    private static final RenderType DOMAIN_INSIDE = RenderType.create(
+    public static final RenderType DOMAIN_INSIDE = RenderType.create(
             "domain_inside",
-            DefaultVertexFormat.POSITION,
+            DefaultVertexFormat.BLOCK,
             VertexFormat.Mode.QUADS,
-            0x600,
+            4194304,
             false,
             false,
             RenderType.CompositeState.builder()
+                    .setLightmapState(LIGHTMAP)
                     .setShaderState(DOMAIN_SHADER)
                     .setTextureState(
-                            RenderStateShard.MultiTextureStateShard.builder()
-                                    .add(TheEndPortalRenderer.END_SKY_LOCATION, false, false)
-                                    .add(TheEndPortalRenderer.END_PORTAL_LOCATION, false, false)
+                            new MultiTextureStateShard.Builder()
+                                    .add(DOMAIN_LAYER_0, false, false)
+                                    .add(DOMAIN_LAYER_1, false, false)
                                     .build()
                     )
-                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                    .setCullState(RenderStateShard.NO_CULL)
-                    .setLightmapState(RenderStateShard.LIGHTMAP)
-                    .setOverlayState(RenderStateShard.OVERLAY)
-                    .createCompositeState(false)
+                    .setCullState(NO_CULL)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .createCompositeState(true)
     );
-
-
-
 
     public static RenderType insideDomain() {
         return DOMAIN_INSIDE;

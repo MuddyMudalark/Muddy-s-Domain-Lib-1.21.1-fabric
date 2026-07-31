@@ -41,6 +41,5 @@ public class LenderRevelerMixin {
 
         profilerFiller.popPush("terrain");
         this.renderSectionLayer(ModRenderTypes.insideDomain(), d, e, g, matrix4f, matrix4f2);
-        profilerFiller.pop();
     }
 }
