@@ -5,7 +5,9 @@ import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import muddy.domain_framework.entity.ModEntities;
+import muddy.domain_framework.network.DomainDetailsS2CPayload;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
+import muddy.domain_framework.util.Domain;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -248,6 +250,14 @@ public class DomainEntity extends LivingEntity {
                 }
             }
             if (firstTick) {
+                DomainDetailsS2CPayload payload = new DomainDetailsS2CPayload(new Domain (this.blockPosition(), this.maxRadius));
+
+                for (ServerPlayer player : PlayerLookup.world((ServerLevel) level())) {
+                    if (player.distanceTo(this) <= maxRadius) {
+                        ServerPlayNetworking.send(player, payload);
+                    }
+                }
+
                 if (instantExpand) {
                     radius = maxRadius;
 

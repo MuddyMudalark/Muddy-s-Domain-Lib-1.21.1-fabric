@@ -16,14 +16,16 @@ out vec2 texCoord;
 out vec3 vertexNormal;
 uniform vec3 ChunkOffset;
 uniform vec3 CameraPosition;
+uniform vec3 DomainCenterPosition;
 out vec3 viewPosition;
 out vec3 worldPosition;
 out vec4 texProj0;
 
 void main() {
     vec3 pos = Position + ChunkOffset;
+    vec3 domainRelativePos = CameraPosition - DomainCenterPosition;
 
-    worldPosition = CameraPosition - pos;
+    worldPosition = pos;
 
     vec4 transformedPosition = ModelViewMat * vec4(pos, 1.0);
 

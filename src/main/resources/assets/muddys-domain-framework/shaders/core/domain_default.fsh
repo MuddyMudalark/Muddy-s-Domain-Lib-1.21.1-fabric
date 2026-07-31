@@ -58,8 +58,7 @@ out vec4 fragColor;
 void main() {
     vec3 color = textureProj(Sampler0, texProj0).rgb * COLORS[0];
 
-    int layerCount =
-    clamp(EndPortalLayers, 0, 16);
+    int layerCount = clamp(EndPortalLayers, 0, 16);
 
     for (int i = 0; i < 16; ++i) {
         if (i >= layerCount) {
@@ -73,9 +72,5 @@ void main() {
         color += textureProj(Sampler1, projectedCoordinates).rgb * COLORS[i];
     }
 
-    float scale = 0.0625;
-
-    vec2 worldUv = worldPosition.xz * scale;
-
-    fragColor = vec4(color * worldPosition, 1.0);
+    fragColor = vec4(color / worldPosition, 1.0);
 }
