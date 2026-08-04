@@ -1,6 +1,5 @@
 package muddy.domain_framework.mixin;
 
-import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
@@ -8,8 +7,6 @@ import muddy.domain_framework.util.HasDomainExpanded;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ChorusFruitItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
@@ -44,6 +41,8 @@ public class LivingEntityMixin implements HasDomainExpanded {
         if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainAirBlock domainAir) {
             UUID ownerUUID = domainAir.getDomainOwnerUUID();
             if (ownerUUID != null) {
+
+
                 if (!thisEntity.getUUID().equals(ownerUUID)) {
                     if (!domainAir.getDomainEffect().equals(null)) {
                         if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
@@ -53,7 +52,8 @@ public class LivingEntityMixin implements HasDomainExpanded {
                                     domainAir.getDomainEffectLength(),
                                     0,
                                     false,
-                                    false)
+                                    false
+                                    )
                             );
                         }
                     }

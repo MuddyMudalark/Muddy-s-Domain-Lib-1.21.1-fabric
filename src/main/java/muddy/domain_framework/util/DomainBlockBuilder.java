@@ -90,7 +90,8 @@ public class DomainBlockBuilder {
                 true,
                 domainEntity.getDomainEffectLength(),
                 domainEntity.getOwnerUUID(),
-                domainEntity.getDomainEffect()
+                domainEntity.getDomainEffect(),
+                domainEntity.blockPosition()
         );
 
         for (int x = -radius; x <= radius; x++) {

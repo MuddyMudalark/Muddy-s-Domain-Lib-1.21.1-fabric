@@ -5,9 +5,7 @@ import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import muddy.domain_framework.entity.ModEntities;
-import muddy.domain_framework.network.DomainDetailsS2CPayload;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
-import muddy.domain_framework.util.Domain;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -42,8 +40,11 @@ public class DomainEntity extends LivingEntity {
     private Map<BlockPos, BlockState> savedBlocks = new HashMap<>();
 
     private Holder<MobEffect> domainEffect;
+
     private Player owner;
     private UUID ownerUUID;
+
+    private List<Entity> attachedEntities = new ArrayList<>();
 
     private int ticksInBetweenExpansion = 0;
 
@@ -61,6 +62,8 @@ public class DomainEntity extends LivingEntity {
     private boolean hasExpandedFully = false;
     private boolean expandTick = true;
     private boolean instantExpand = false;
+    private boolean shouldEffectOwner = false;
+    private boolean shouldEffectOthers = true;
     private boolean hasCheckedForClash = false;
     private boolean isClashing = false;
 
@@ -82,6 +85,10 @@ public class DomainEntity extends LivingEntity {
     }
 
     public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, boolean instantExpand) {
+        of(domainEffect, domainEffectLength, position, owner, maxRadius, lifetime, savedBlocks, instantExpand, false, true);
+    }
+
+    public void of (Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, boolean instantExpand, boolean shouldAffectOwner, boolean shouldAffectOthers) {
         this.domainEffect = domainEffect;
         this.domainEffectLength = domainEffectLength;
         this.setPos(position);
@@ -90,7 +97,26 @@ public class DomainEntity extends LivingEntity {
         this.lifetime = lifetime;
         this.instantExpand = instantExpand;
 
+        this.shouldEffectOwner = shouldAffectOwner;
+        this.shouldEffectOthers = shouldAffectOthers;
+
         this.savedBlocks.putAll(savedBlocks);
+    }
+
+    public void attachEntity(Entity entity) {
+        attachedEntities.add(entity);
+    }
+
+    public void detachEntity(Entity entity) {
+        if (attachedEntities.contains(entity)) {
+            attachedEntities.remove(entity);
+        } else {
+            MuddysDomainFramework.LOGGER.info("{} already removed or never on list", entity);
+        }
+    }
+
+    public List<Entity> getAttachedEntities() {
+        return attachedEntities;
     }
 
     public static AttributeSupplier.@NotNull Builder createAttributes() {
@@ -175,6 +201,9 @@ public class DomainEntity extends LivingEntity {
         compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
         compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
 
+        compoundTag.putBoolean("ShouldTargetOwner", this.shouldEffectOwner);
+        compoundTag.putBoolean("ShouldTargetOthers", this.shouldEffectOthers);
+
         if (this.owner != null) {
             compoundTag.putUUID("Owner", this.owner.getUUID());
         }
@@ -182,7 +211,6 @@ public class DomainEntity extends LivingEntity {
         if (!this.savedBlocks.isEmpty()) {
             compoundTag.put("DomainBlocksPos", BlockPos.CODEC.listOf().encodeStart(NbtOps.INSTANCE, savedBlocks.keySet().stream().toList()).getOrThrow());
             compoundTag.put("DomainBlockStates", BlockState.CODEC.listOf().encodeStart(NbtOps.INSTANCE, savedBlocks.values().stream().toList()).getOrThrow());
-
         }
 
         super.addAdditionalSaveData(compoundTag);
@@ -200,6 +228,9 @@ public class DomainEntity extends LivingEntity {
                 .orElse(MobEffects.LEVITATION);
 
         this.ownerUUID = compoundTag.getUUID("Owner");
+
+        this.shouldEffectOwner = compoundTag.getBoolean("ShouldTargetOwner");
+        this.shouldEffectOthers = compoundTag.getBoolean("ShouldTargetOthers");
 
         List<BlockPos> blockPosList = BlockPos.CODEC.listOf().parse(
                 NbtOps.INSTANCE, compoundTag.get("DomainBlocksPos")).resultOrPartial(
@@ -250,14 +281,6 @@ public class DomainEntity extends LivingEntity {
                 }
             }
             if (firstTick) {
-                DomainDetailsS2CPayload payload = new DomainDetailsS2CPayload(new Domain (this.blockPosition(), this.maxRadius));
-
-                for (ServerPlayer player : PlayerLookup.world((ServerLevel) level())) {
-                    if (player.distanceTo(this) <= maxRadius) {
-                        ServerPlayNetworking.send(player, payload);
-                    }
-                }
-
                 if (instantExpand) {
                     radius = maxRadius;
 
@@ -288,6 +311,12 @@ public class DomainEntity extends LivingEntity {
             }
             if (ownerUUID != null) {
                 owner = level().getPlayerByUUID(ownerUUID);
+            }
+        }
+
+        if (!attachedEntities.isEmpty()) {
+            for (Entity entity : attachedEntities) {
+                entity.setPos(this.position());
             }
         }
 

@@ -17,7 +17,7 @@ public class RenderTypeMixin {
     private static ImmutableList<RenderType> CHUNK_BUFFER_LAYERS;
 
     @Inject(method = "<clinit>", at = @At("TAIL"))
-    private static void modifyChunkLayers(CallbackInfo ci) {
+    private static void domain$modifyChunkLayers(CallbackInfo ci) {
         CHUNK_BUFFER_LAYERS = ImmutableList.<RenderType>builder()
                 .addAll(CHUNK_BUFFER_LAYERS)
                 .add(ModRenderTypes.insideDomain())

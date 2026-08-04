@@ -5,9 +5,7 @@
   "client": [
     "ClientPlayerMixin",
     "ExampleClientMixin",
-    "ItemBlockRenderTypesMixin",
-    "LenderRevelerMixin",
-    "RenderTypeMixin"
+    "LenderRevelerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,5 +1,6 @@
 package muddy.domain_framework.block.custom;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.level.block.AirBlock;
@@ -13,13 +14,23 @@ public class DomainAirBlock extends AirBlock {
     private int domainEffectLength = 20;
     private boolean hasInitialized = false;
     private boolean hasExpandedFully = false;
+    private BlockPos centerPosition;
 
-    public void of(boolean hasExpandedFully, boolean hasInitialized, int domainEffectLength, UUID domainOwnerUUID, Holder<MobEffect> domainEffect) {
+    public void of(boolean hasExpandedFully, boolean hasInitialized, int domainEffectLength, UUID domainOwnerUUID, Holder<MobEffect> domainEffect, BlockPos centerPosition) {
         this.hasExpandedFully = hasExpandedFully;
         this.hasInitialized = hasInitialized;
         this.domainEffectLength = domainEffectLength;
         this.domainOwnerUUID = domainOwnerUUID;
         this.domainEffect = domainEffect;
+        this.centerPosition = centerPosition;
+    }
+
+    public BlockPos getCenterPosition() {
+        return centerPosition;
+    }
+
+    public void setCenterPosition(BlockPos centerPosition) {
+        this.centerPosition = centerPosition;
     }
 
     public boolean getHasExpandedFully() {

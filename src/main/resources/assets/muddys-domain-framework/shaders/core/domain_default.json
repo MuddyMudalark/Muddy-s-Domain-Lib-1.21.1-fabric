@@ -64,12 +64,6 @@
     },
     { "name": "EndPortalLayers", "type": "int", "count": 1, "values": [ 15 ] },
     {
-      "name": "CameraPosition",
-      "type": "float",
-      "count": 3,
-      "values": [0.0, 0.0, 0.0]
-    },
-    {
       "name": "DomainCenterPosition",
       "type": "float",
       "count": 3,

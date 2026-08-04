@@ -15,26 +15,26 @@ out vec4 vertexColor;
 out vec2 texCoord;
 out vec3 vertexNormal;
 uniform vec3 ChunkOffset;
-uniform vec3 CameraPosition;
 uniform vec3 DomainCenterPosition;
-out vec3 viewPosition;
+out vec3 domainPosition;
 out vec3 worldPosition;
 out vec4 texProj0;
 
 void main() {
     vec3 pos = Position + ChunkOffset;
-    vec3 domainRelativePos = CameraPosition - DomainCenterPosition;
 
     worldPosition = pos;
 
-    vec4 transformedPosition = ModelViewMat * vec4(pos, 1.0);
+    domainPosition = DomainCenterPosition;
+
+    vec4 transformedPosition = ModelViewMat * vec4(pos + domainPosition, 1.0);
 
     gl_Position = ProjMat * transformedPosition;
 
     vertexColor = Color;
     texCoord = UV0;
     vertexNormal = Normal;
-    viewPosition = transformedPosition.xyz;
+
 
     texProj0 = projection_from_position(gl_Position);
 }

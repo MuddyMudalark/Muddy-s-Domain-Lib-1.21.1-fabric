@@ -10,6 +10,8 @@ uniform int EndPortalLayers;
 in vec4 vertexColor;
 in vec2 texCoord;
 
+const float PI = 3.14159265358979323846;
+
 const vec3[] COLORS = vec3[](
 vec3(0.022087, 0.098399, 0.110818),
 vec3(0.011892, 0.095924, 0.089485),
@@ -51,8 +53,19 @@ mat4 end_portal_layer(float layer) {
     return mat4(scale * rotate) * translate * SCALE_TRANSLATE;
 }
 
+vec2 sphericalUV(vec3 position) {
+    vec3 direction = normalize(position);
+
+    float longitude = atan(direction.z, direction.x);
+
+    float latitude = asin(clamp(direction.y, -1.0, 1.0));
+
+    return vec2(longitude / (2.0 * PI) + 0.5, latitude / PI + 0.5);
+}
+
 in vec4 texProj0;
 in vec3 worldPosition;
+in vec3 domainPosition;
 out vec4 fragColor;
 
 void main() {

@@ -38,7 +38,6 @@ public class AntiGoatTeleportationMixin {
             player.playSound(ModSounds.ITEM_NO_HORN, 2f, 1f);
 
             cir.setReturnValue(InteractionResultHolder.fail(itemStack));
-
             cir.cancel();
         }
     }

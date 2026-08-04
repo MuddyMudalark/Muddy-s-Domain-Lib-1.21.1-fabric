@@ -2,13 +2,11 @@ package muddy.domain_framework.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.client.MuddysDomainFrameworkClient;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.TheEndPortalRenderer;
 import net.minecraft.resources.ResourceLocation;
 
 @Environment(EnvType.CLIENT)
@@ -43,7 +41,7 @@ public class ModRenderTypes extends RenderType {
                                     .build()
                     )
                     .setCullState(NO_CULL)
-                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setOverlayState(OVERLAY)
                     .createCompositeState(true)
     );
 
