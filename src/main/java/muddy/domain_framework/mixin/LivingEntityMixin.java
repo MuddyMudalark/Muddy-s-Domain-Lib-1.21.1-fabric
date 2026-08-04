@@ -42,22 +42,41 @@ public class LivingEntityMixin implements HasDomainExpanded {
             UUID ownerUUID = domainAir.getDomainOwnerUUID();
             if (ownerUUID != null) {
 
-
-                if (!thisEntity.getUUID().equals(ownerUUID)) {
-                    if (!domainAir.getDomainEffect().equals(null)) {
-                        if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
-
-                            thisEntity.addEffect(new MobEffectInstance(
-                                    domainAir.getDomainEffect(),
-                                    domainAir.getDomainEffectLength(),
-                                    0,
-                                    false,
-                                    false
-                                    )
-                            );
+                if (domainAir.shouldTargetOthers()) {
+                    if (!thisEntity.getUUID().equals(ownerUUID)) {
+                        if (!domainAir.getDomainEffect().equals(null)) {
+                            if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
+                                thisEntity.addEffect(new MobEffectInstance(
+                                                domainAir.getDomainEffect(),
+                                                domainAir.getDomainEffectLength(),
+                                                0,
+                                                false,
+                                                false
+                                        )
+                                );
+                            }
                         }
                     }
                 }
+
+                if (domainAir.shouldTargetOwner()) {
+                    if (thisEntity.getUUID().equals(ownerUUID)) {
+                        if (!domainAir.getDomainEffect().equals(null)) {
+                            if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
+
+                                thisEntity.addEffect(new MobEffectInstance(
+                                                domainAir.getDomainEffect(),
+                                                domainAir.getDomainEffectLength(),
+                                                0,
+                                                false,
+                                                false
+                                        )
+                                );
+                            }
+                        }
+                    }
+                }
+
             }
             if (!level.isClientSide()) {
                 if (!domainAir.getHasExpandedFully()) {

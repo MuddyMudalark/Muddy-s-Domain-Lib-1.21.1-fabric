@@ -16,13 +16,27 @@ public class DomainAirBlock extends AirBlock {
     private boolean hasExpandedFully = false;
     private BlockPos centerPosition;
 
-    public void of(boolean hasExpandedFully, boolean hasInitialized, int domainEffectLength, UUID domainOwnerUUID, Holder<MobEffect> domainEffect, BlockPos centerPosition) {
+    private boolean shouldTargetOwner = false;
+    private boolean shouldTargetOthers = true;
+
+    public void of(boolean hasExpandedFully, boolean hasInitialized, int domainEffectLength, UUID domainOwnerUUID, Holder<MobEffect> domainEffect, BlockPos centerPosition, boolean shouldTargetOwner, boolean shouldTargetOthers) {
         this.hasExpandedFully = hasExpandedFully;
         this.hasInitialized = hasInitialized;
         this.domainEffectLength = domainEffectLength;
         this.domainOwnerUUID = domainOwnerUUID;
         this.domainEffect = domainEffect;
         this.centerPosition = centerPosition;
+
+        this.shouldTargetOwner = shouldTargetOwner;
+        this.shouldTargetOthers = shouldTargetOthers;
+    }
+
+    public boolean shouldTargetOwner() {
+        return this.shouldTargetOwner;
+    }
+
+    public boolean shouldTargetOthers() {
+        return this.shouldTargetOthers;
     }
 
     public BlockPos getCenterPosition() {

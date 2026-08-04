@@ -62,8 +62,8 @@ public class DomainEntity extends LivingEntity {
     private boolean hasExpandedFully = false;
     private boolean expandTick = true;
     private boolean instantExpand = false;
-    private boolean shouldEffectOwner = false;
-    private boolean shouldEffectOthers = true;
+    private boolean shouldTargetOwner = false;
+    private boolean shouldTargetOthers = true;
     private boolean hasCheckedForClash = false;
     private boolean isClashing = false;
 
@@ -88,7 +88,7 @@ public class DomainEntity extends LivingEntity {
         of(domainEffect, domainEffectLength, position, owner, maxRadius, lifetime, savedBlocks, instantExpand, false, true);
     }
 
-    public void of (Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, boolean instantExpand, boolean shouldAffectOwner, boolean shouldAffectOthers) {
+    public void of (Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, boolean instantExpand, boolean shouldTargetOwner, boolean shouldTargetOthers) {
         this.domainEffect = domainEffect;
         this.domainEffectLength = domainEffectLength;
         this.setPos(position);
@@ -97,10 +97,18 @@ public class DomainEntity extends LivingEntity {
         this.lifetime = lifetime;
         this.instantExpand = instantExpand;
 
-        this.shouldEffectOwner = shouldAffectOwner;
-        this.shouldEffectOthers = shouldAffectOthers;
+        this.shouldTargetOwner = shouldTargetOwner;
+        this.shouldTargetOthers = shouldTargetOthers;
 
         this.savedBlocks.putAll(savedBlocks);
+    }
+
+    public boolean shouldTargetOwner() {
+        return shouldTargetOwner;
+    }
+
+    public boolean shouldTargetOthers() {
+        return shouldTargetOthers;
     }
 
     public void attachEntity(Entity entity) {
@@ -201,8 +209,8 @@ public class DomainEntity extends LivingEntity {
         compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
         compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
 
-        compoundTag.putBoolean("ShouldTargetOwner", this.shouldEffectOwner);
-        compoundTag.putBoolean("ShouldTargetOthers", this.shouldEffectOthers);
+        compoundTag.putBoolean("ShouldTargetOwner", this.shouldTargetOwner);
+        compoundTag.putBoolean("ShouldTargetOthers", this.shouldTargetOthers);
 
         if (this.owner != null) {
             compoundTag.putUUID("Owner", this.owner.getUUID());
@@ -229,8 +237,8 @@ public class DomainEntity extends LivingEntity {
 
         this.ownerUUID = compoundTag.getUUID("Owner");
 
-        this.shouldEffectOwner = compoundTag.getBoolean("ShouldTargetOwner");
-        this.shouldEffectOthers = compoundTag.getBoolean("ShouldTargetOthers");
+        this.shouldTargetOwner = compoundTag.getBoolean("ShouldTargetOwner");
+        this.shouldTargetOthers = compoundTag.getBoolean("ShouldTargetOthers");
 
         List<BlockPos> blockPosList = BlockPos.CODEC.listOf().parse(
                 NbtOps.INSTANCE, compoundTag.get("DomainBlocksPos")).resultOrPartial(
