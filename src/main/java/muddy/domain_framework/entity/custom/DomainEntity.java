@@ -568,17 +568,25 @@ public class DomainEntity extends LivingEntity {
 
     public boolean shouldCloseDomain() {
         if (age >= lifetime || isDeadOrDying()) {
+            killAttachedEntities();
             replaceDomainSpace();
 
             return true;
         }
         if (ownerCausesDomainExpansionToEnd()) {
+            killAttachedEntities();
             replaceDomainSpace();
 
             return true;
         }
 
         return false;
+    }
+
+    private void killAttachedEntities() {
+        for (Entity attachedEntity: attachedEntities) {
+            attachedEntity.discard();
+        }
     }
 
     public void replaceDomainSpace() {

@@ -1,6 +1,7 @@
 package muddy.domain_framework.client.mixin;
 
 import com.google.common.collect.ImmutableList;
+import muddy.domain_framework.client.MuddysDomainFrameworkClient;
 import muddy.domain_framework.client.render.ModRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import org.spongepowered.asm.mixin.*;
@@ -10,10 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RenderType.class)
 public class RenderTypeMixin {
-
-    @Shadow
-    @Final
-    @Mutable
+    @Shadow @Final @Mutable
     private static ImmutableList<RenderType> CHUNK_BUFFER_LAYERS;
 
     @Inject(method = "<clinit>", at = @At("TAIL"))
@@ -22,5 +20,6 @@ public class RenderTypeMixin {
                 .addAll(CHUNK_BUFFER_LAYERS)
                 .add(ModRenderTypes.insideDomain())
                 .build();
+
     }
 }

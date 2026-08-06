@@ -1,7 +1,5 @@
 package muddy.domain_framework.item.custom;
 
-import muddy.domain_framework.block.custom.DomainAirBlock;
-import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import muddy.domain_framework.entity.ModEntities;
 import muddy.domain_framework.entity.custom.DomainEntity;
 import muddy.domain_framework.util.HasDomainExpanded;

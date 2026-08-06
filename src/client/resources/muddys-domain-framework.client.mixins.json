@@ -4,13 +4,16 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "ClientPlayerMixin",
+    "DefaultMaterialsMixin",
     "ExampleClientMixin",
-    "LenderRevelerMixin"
+    "ItemBlockRenderTypesMixin",
+    "RenderTypeMixin",
+    "DefaultTerrainRenderPassesMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "overwrites": {
     "requireAnnotations": true
-	}
+  }
 }

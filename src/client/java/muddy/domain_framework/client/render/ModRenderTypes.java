@@ -41,7 +41,6 @@ public class ModRenderTypes extends RenderType {
                                     .build()
                     )
                     .setCullState(NO_CULL)
-                    .setOverlayState(OVERLAY)
                     .createCompositeState(true)
     );
 

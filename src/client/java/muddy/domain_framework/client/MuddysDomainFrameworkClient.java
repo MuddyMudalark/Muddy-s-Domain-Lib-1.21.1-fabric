@@ -20,15 +20,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.ladysnake.satin.api.event.PostWorldRenderCallbackV3;
 
 import static muddy.domain_framework.MuddysDomainFramework.MOD_ID;
 
 public class MuddysDomainFrameworkClient implements ClientModInitializer {
     @Nullable
     public static ShaderInstance DOMAIN_SHADER;
-
-
 
     @Override
     public void onInitializeClient() {
@@ -56,12 +53,6 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
                     DefaultVertexFormat.BLOCK,
                     shader -> DOMAIN_SHADER = shader
             );
-        });
-
-        //Look into how sodium avoids conflicts with other client-side mods.
-
-        PostWorldRenderCallbackV3.EVENT.register((poseStack, projectionMat, modelViewMat, camera, tickDelta) -> {
-
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(listener -> {

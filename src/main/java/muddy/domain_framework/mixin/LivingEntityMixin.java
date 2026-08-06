@@ -41,7 +41,6 @@ public class LivingEntityMixin implements HasDomainExpanded {
         if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainAirBlock domainAir) {
             UUID ownerUUID = domainAir.getDomainOwnerUUID();
             if (ownerUUID != null) {
-
                 if (domainAir.shouldTargetOthers()) {
                     if (!thisEntity.getUUID().equals(ownerUUID)) {
                         if (!domainAir.getDomainEffect().equals(null)) {
