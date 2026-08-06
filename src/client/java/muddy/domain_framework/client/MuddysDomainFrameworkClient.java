@@ -2,6 +2,8 @@ package muddy.domain_framework.client;
 
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.*;
+import muddy.domain_framework.block.entity.ModBlockEntities;
+import muddy.domain_framework.client.block_entity.DomainBarrierRenderer;
 import muddy.domain_framework.client.entity.DomainClashRenderer;
 import muddy.domain_framework.client.entity.DomainRenderer;
 import muddy.domain_framework.entity.ModEntities;
@@ -16,6 +18,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
@@ -32,8 +35,7 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.DOMAIN_ENTITY, DomainRenderer::new);
         EntityRendererRegistry.register(ModEntities.DOMAIN_CLASH_ENTITY, DomainClashRenderer::new);
 
-//        RenderLayerHelper.registerBlockRenderLayer(ModRenderTypes.insideDomain());
-//        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.DOMAIN_BARRIER_BLOCK, ModRenderTypes.insideDomain());
+        BlockEntityRenderers.register(ModBlockEntities.DOMAIN_BLOCK_ENTITY, DomainBarrierRenderer::new);
 
         ClientPlayNetworking.registerGlobalReceiver(DomainHasExpandedS2CPayload.ID, (payload, context) -> {
             ClientLevel level = context.client().level;
@@ -66,7 +68,7 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
 
                 if (domainCenterUniform != null) {
                     if (centerOfDomain != null) {
-                        Vec3 domainVectorisedCenter = (centerOfDomain.getCenter().subtract(player.position()));
+                        Vec3 domainVectorisedCenter = (centerOfDomain.getBottomCenter().subtract(player.position()));
 
                         domainCenterUniform.set(
                                 (float) domainVectorisedCenter.x(),

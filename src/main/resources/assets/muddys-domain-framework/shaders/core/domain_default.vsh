@@ -27,14 +27,13 @@ void main() {
 
     domainPosition = DomainCenterPosition;
 
-    vec4 transformedPosition = ModelViewMat * vec4(pos + domainPosition, 1.0);
+    vec4 transformedPosition = ModelViewMat * vec4(pos, 1.0);
 
     gl_Position = ProjMat * transformedPosition;
 
     vertexColor = Color;
     texCoord = UV0;
     vertexNormal = Normal;
-
 
     texProj0 = projection_from_position(gl_Position);
 }

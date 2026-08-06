@@ -26,7 +26,7 @@ public class ModRenderTypes extends RenderType {
 
     public static final RenderType DOMAIN_INSIDE = RenderType.create(
             "domain_inside",
-            DefaultVertexFormat.BLOCK,
+            DefaultVertexFormat.POSITION,
             VertexFormat.Mode.QUADS,
             4194304,
             false,

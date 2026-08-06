@@ -93,6 +93,8 @@ public class ClientPlayerMixin implements DomainCenterPosition {
 
     @Override
     public boolean domain$shouldRenderInternalDomain() {
+        LivingEntity thisEntity = ((LivingEntity) (Object) this);
+
         return false;
     }
 

@@ -6,12 +6,14 @@ import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.entity.custom.DomainEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 public class DomainBlockBuilder {
-    public static void buildStandingSurface(Level level, BlockPos centerPos, int radius) {
+    public static void buildStandingSurface(Level level, BlockPos centerPos, int radius, ResourceLocation domainShaderResource) {
         DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         barrierBlock.setCenterOfDomain(centerPos);
+        barrierBlock.setShaderPath(domainShaderResource);
 
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
@@ -27,12 +29,13 @@ public class DomainBlockBuilder {
         }
     }
 
-    public static void buildHollowSphereDynamically(Level level, BlockPos centerPos, int radius, int yValue) {
+    public static void buildHollowSphereDynamically(Level level, BlockPos centerPos, int radius, int yValue, ResourceLocation domainShaderResource) {
         int outerSquare = radius * radius;
         int innerSquare = (radius - 1) * (radius - 1);
 
         DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         barrierBlock.setCenterOfDomain(centerPos);
+        barrierBlock.setShaderPath(domainShaderResource);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -59,12 +62,13 @@ public class DomainBlockBuilder {
 
     }
 
-    public static void buildHollowSphere(Level level, BlockPos centerPos, int radius) {
+    public static void buildHollowSphere(Level level, BlockPos centerPos, int radius, ResourceLocation domainShaderResource) {
         int outerSquare = radius * radius;
         int innerSquare = (radius - 1) * (radius - 1);
 
         DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         barrierBlock.setCenterOfDomain(centerPos);
+        barrierBlock.setShaderPath(domainShaderResource);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -104,6 +108,8 @@ public class DomainBlockBuilder {
 
                     if (distanceSquare <= radius * radius) {
                         BlockPos pos = centerPos.offset(x, y, z);
+
+                        level.removeBlockEntity(pos);
 
                         level.setBlockAndUpdate(pos, domainAir.defaultBlockState());
                     }

@@ -3,12 +3,7 @@
   "package": "muddy.domain_framework.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ClientPlayerMixin",
-    "DefaultMaterialsMixin",
-    "ExampleClientMixin",
-    "ItemBlockRenderTypesMixin",
-    "RenderTypeMixin",
-    "DefaultTerrainRenderPassesMixin"
+    "ClientPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
