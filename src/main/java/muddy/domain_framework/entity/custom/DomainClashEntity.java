@@ -187,7 +187,7 @@ public class DomainClashEntity extends LivingEntity {
         this.playerCount = ownersAndDomainEffects.size();
         this.degreesPerPlayer = playerCount == 0 ? 90 : 360 / playerCount;
 
-        savedBlockEntities = compoundTag.getList("ReplacedBlockEntities", 1);
+        savedBlockEntities = (ListTag) compoundTag.get("ReplacedBlockEntities");
         savedBlocks.clear();
         savedBlocks = mappedResults;
 
