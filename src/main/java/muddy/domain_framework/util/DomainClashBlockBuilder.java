@@ -5,7 +5,7 @@ import muddy.domain_framework.block.ModBlocks;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -33,31 +33,66 @@ public class DomainClashBlockBuilder {
 
     }
 
-    public static void buildSectionOfSurface(Level level, BlockPos centerPos, int radius, int playerCount, int degreesPerPlayer, List<ResourceLocation> clashingShaderPaths) {
+    public static void buildSurfaceWithRandomSections(Level level, BlockPos centerPos, int radius, int playerCount, List<String> clashingShaderPaths) {
         DomainBarrierBlock domainBarrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         domainBarrierBlock.setCenterOfDomain(centerPos);
 
-        for (int playerIndex = playerCount; playerIndex > 0; playerIndex--) {
-            int angledCutOfDomain = degreesPerPlayer * playerIndex;
-            int maximum = (int) (((double) angledCutOfDomain / 360) * (Math.PI * Math.pow(radius, 2.0)));
+        for (int playerIndex = playerCount - 1; playerIndex > 0; playerIndex--) {
+            RandomSource randomSource = RandomSource.create();
+            int random = randomSource.nextInt(0, playerCount - 1);
 
-            ResourceLocation useShaderPath = clashingShaderPaths.get(playerIndex);
-            domainBarrierBlock.setShaderPath(useShaderPath);
-
-            BlockPos maximumPoint = centerPos.offset(maximum, 0, maximum);
+            domainBarrierBlock.setShaderName(clashingShaderPaths.get(random));
 
             for (int x = 0; x <= radius; x++) {
-                if (x <= maximumPoint.getX()) {
-                    for (int z = 0; z <= radius; z++) {
-                        if (z <= maximumPoint.getZ()) {
-                            BlockPos pos = centerPos.offset(x, centerPos.getY(), z);
+                for (int z = 0; z <= radius; z++) {
+                    BlockPos pos = centerPos.offset(x, centerPos.getY(), z);
 
-                            level.removeBlockEntity(pos);
-                            level.setBlockAndUpdate(pos, domainBarrierBlock.defaultBlockState());
-                        }
-                    }
+                    level.removeBlockEntity(pos);
+                    level.setBlockAndUpdate(pos, domainBarrierBlock.defaultBlockState());
                 }
+
             }
         }
+    }
+
+    public static void buildHollowSphereDynamicallyWithRandomSections(Level level, BlockPos centerPos, int radius, int yValue, int playerCount, List<String> clashingShaderPaths) {
+        int outerSquare = radius * radius;
+        int innerSquare = (radius - 1) * (radius - 1);
+
+        DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
+        barrierBlock.setCenterOfDomain(centerPos);
+
+        for (int playerIndex = playerCount - 1; playerIndex > 0; playerIndex--) {
+            RandomSource randomSource = RandomSource.create();
+            int random = randomSource.nextInt(0, playerCount - 1);
+
+            barrierBlock.setShaderName(clashingShaderPaths.get(random));
+
+            for (int x = -radius; x <= radius; x++) {
+                for (int y = -radius; y <= radius; y++) {
+                    if (y <= yValue) {
+                        for (int z = -radius; z <= radius; z++) {
+                            int distanceSquare = x * x + y * y + z * z;
+
+                            if (y < 0) {
+                                if (distanceSquare <= radius * radius) {
+                                    BlockPos pos = centerPos.offset(x, y, z);
+
+                                    level.setBlockAndUpdate(pos, barrierBlock.defaultBlockState());
+                                }
+                            } else if (distanceSquare <= outerSquare && distanceSquare >= innerSquare) {
+                                BlockPos pos = centerPos.offset(x, y, z);
+
+                                level.setBlockAndUpdate(pos, barrierBlock.defaultBlockState());
+                            }
+
+                        }
+                    }
+
+                }
+            }
+
+        }
+
     }
 }

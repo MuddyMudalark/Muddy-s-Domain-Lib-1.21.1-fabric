@@ -26,12 +26,12 @@ public class ModItems {
 
     // This is how a domains sure hit will be determined from the used item
     public static final Item DOMAIN_TEST_ITEM = register(
-            new DomainSpawningItem(new Item.Properties(), MobEffects.REGENERATION),
+            new DomainSpawningItem(new Item.Properties(), MobEffects.REGENERATION, "domain_alt"),
             "domain_test_item"
     );
 
     public static final Item DOMAIN_TEST_ITEM2 = register(
-            new DomainSpawningItem(new Item.Properties(), MobEffects.LEVITATION),
+            new DomainSpawningItem(new Item.Properties(), MobEffects.LEVITATION, "domain_default"),
             "domain_test_item2"
     );
 

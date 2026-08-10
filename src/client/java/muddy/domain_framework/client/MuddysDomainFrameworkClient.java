@@ -15,12 +15,14 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +31,10 @@ import static muddy.domain_framework.MuddysDomainFramework.MOD_ID;
 public class MuddysDomainFrameworkClient implements ClientModInitializer {
     @Nullable
     public static ShaderInstance DOMAIN_SHADER;
+    @Nullable
+    public static ShaderInstance DOMAIN_ALTERNATIVE;
+
+    private float totalTickDelta = 0.0F;
 
     @Override
     public void onInitializeClient() {
@@ -55,6 +61,15 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
                     DefaultVertexFormat.BLOCK,
                     shader -> DOMAIN_SHADER = shader
             );
+
+            context.register(
+                    ResourceLocation.fromNamespaceAndPath(
+                            MOD_ID,
+                            "domain_alt"
+                    ),
+                    DefaultVertexFormat.BLOCK,
+                    shader -> DOMAIN_ALTERNATIVE = shader
+            );
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(listener -> {
@@ -80,6 +95,13 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
                         domainCenterUniform.set(0.0F, 0.0F, 0.0F);
                     }
                 }
+
+
+                HudRenderCallback.EVENT.register((context, tickDeltaManager) -> {
+
+                    context.renderFakeItem(Items.DIAMOND.getDefaultInstance(), context.guiWidth()/2-7, context.guiHeight()/2-8);
+                });
+
             }
         });
 

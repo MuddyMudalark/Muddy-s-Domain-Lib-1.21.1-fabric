@@ -6,14 +6,13 @@ import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.entity.custom.DomainEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 public class DomainBlockBuilder {
-    public static void buildStandingSurface(Level level, BlockPos centerPos, int radius, ResourceLocation domainShaderResource) {
+    public static void buildStandingSurface(Level level, BlockPos centerPos, int radius, String domainShaderResource) {
         DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         barrierBlock.setCenterOfDomain(centerPos);
-        barrierBlock.setShaderPath(domainShaderResource);
+        barrierBlock.setShaderName(domainShaderResource);
 
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
@@ -29,13 +28,13 @@ public class DomainBlockBuilder {
         }
     }
 
-    public static void buildHollowSphereDynamically(Level level, BlockPos centerPos, int radius, int yValue, ResourceLocation domainShaderResource) {
+    public static void buildHollowSphereDynamically(Level level, BlockPos centerPos, int radius, int yValue, String domainShaderResource) {
         int outerSquare = radius * radius;
         int innerSquare = (radius - 1) * (radius - 1);
 
         DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         barrierBlock.setCenterOfDomain(centerPos);
-        barrierBlock.setShaderPath(domainShaderResource);
+        barrierBlock.setShaderName(domainShaderResource);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -62,13 +61,13 @@ public class DomainBlockBuilder {
 
     }
 
-    public static void buildHollowSphere(Level level, BlockPos centerPos, int radius, ResourceLocation domainShaderResource) {
+    public static void buildHollowSphere(Level level, BlockPos centerPos, int radius, String domainShaderResource) {
         int outerSquare = radius * radius;
         int innerSquare = (radius - 1) * (radius - 1);
 
         DomainBarrierBlock barrierBlock = (DomainBarrierBlock) ModBlocks.DOMAIN_BARRIER_BLOCK;
         barrierBlock.setCenterOfDomain(centerPos);
-        barrierBlock.setShaderPath(domainShaderResource);
+        barrierBlock.setShaderName(domainShaderResource);
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {

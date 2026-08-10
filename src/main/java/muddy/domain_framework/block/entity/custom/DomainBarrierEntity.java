@@ -1,11 +1,9 @@
 package muddy.domain_framework.block.entity.custom;
 
 import muddy.domain_framework.block.custom.DomainAirBlock;
-import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -16,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DomainBarrierEntity extends BlockEntity {
+    private String domainShaderName;
+
     public DomainBarrierEntity(BlockPos blockPos, BlockState blockState) {
         super(ModBlockEntities.DOMAIN_BLOCK_ENTITY, blockPos, blockState);
     }
@@ -34,13 +34,16 @@ public class DomainBarrierEntity extends BlockEntity {
 
     public boolean shouldRenderInternalFace(Direction direction) {
         assert this.level != null;
-        return this.level.getBlockState(this.getBlockPos().relative(direction)).getBlock() instanceof DomainAirBlock;
+        return this.level.getBlockState(this.getBlockPos().relative(direction)).getBlock() instanceof DomainAirBlock
+                /*|| this.level.getBlockState(this.getBlockPos().relative(direction)).getBlock() instanceof DomainClashAirBlock*/;
     }
 
-    public ResourceLocation getDomainShader() {
-        DomainBarrierBlock domainBarrierBlock = (DomainBarrierBlock) this.getBlockState().getBlock();
+    public void setDomainShaderPath(String domainShaderName) {
+        this.domainShaderName = domainShaderName;
+    }
 
-        return domainBarrierBlock.getShaderPath();
+    public String getDomainShaderName() {
+        return domainShaderName;
     }
 
     public boolean shouldRenderExternalFace(Direction direction) {

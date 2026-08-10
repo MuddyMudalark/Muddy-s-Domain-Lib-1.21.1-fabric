@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -40,7 +39,7 @@ public class DomainEntity extends LivingEntity {
     public static int DEFAULT_LIFETIME = 200;
 
     private Map<BlockPos, BlockState> savedBlocks = new HashMap<>();
-    private ListTag savedBlockEntities = new ListTag();
+    private CompoundTag savedBlockEntities = new CompoundTag();
 
     private Holder<MobEffect> domainEffect;
 
@@ -49,7 +48,7 @@ public class DomainEntity extends LivingEntity {
 
     private List<Entity> attachedEntities = new ArrayList<>();
 
-    private ResourceLocation SHADER_PATH = ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, "shaders/core/domain_default");
+    private String domainShaderName = "domain_default";
 
     private int ticksInBetweenExpansion = 0;
 
@@ -93,10 +92,10 @@ public class DomainEntity extends LivingEntity {
     }
 
     public void of (Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, boolean instantExpand, boolean shouldTargetOwner, boolean shouldTargetOthers) {
-        of(domainEffect, domainEffectLength, position, owner, maxRadius, lifetime, savedBlocks, new ListTag(), instantExpand, false, true);
+        of(domainEffect, domainEffectLength, position, owner, maxRadius, lifetime, savedBlocks, new CompoundTag(), instantExpand, false, true);
     }
 
-    public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, ListTag savedBlockEntities, boolean instantExpand, boolean shouldTargetOwner, boolean shouldTargetOthers) {
+    public void of(Holder<MobEffect> domainEffect, int domainEffectLength, Vec3 position, Player owner, int maxRadius, int lifetime, Map<BlockPos, BlockState> savedBlocks, CompoundTag savedBlockEntities, boolean instantExpand, boolean shouldTargetOwner, boolean shouldTargetOthers) {
         this.domainEffect = domainEffect;
         this.domainEffectLength = domainEffectLength;
         this.setPos(position);
@@ -109,7 +108,7 @@ public class DomainEntity extends LivingEntity {
         this.shouldTargetOthers = shouldTargetOthers;
 
         this.savedBlocks.putAll(savedBlocks);
-        this.savedBlockEntities.addAll(savedBlockEntities);
+        this.savedBlockEntities.put("BlockEntityTags", savedBlockEntities);
     }
 
     public boolean shouldTargetOwner() {
@@ -268,7 +267,7 @@ public class DomainEntity extends LivingEntity {
             mappedResults.put(blockPosList.get(index), blockStateList.get(index));
         }
 
-        savedBlockEntities = (ListTag) compoundTag.get("ReplacedBlockEntities");
+        savedBlockEntities = compoundTag.getCompound("ReplacedBlockEntities");
 
         savedBlocks = mappedResults;
 
@@ -389,21 +388,21 @@ public class DomainEntity extends LivingEntity {
     public void firstTicksBuildDomainExpansion() {
         DomainBlockBuilder.buildHollowInside(level(), blockPosition(), this);
 
-        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, this.getShaderPath());
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, this.getShaderName());
     }
 
     public void buildDomainExpansion() {
         DomainBlockBuilder.buildHollowInside(level(), blockPosition(), this);
 
-        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, this.getShaderPath());
-        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius, this.getShaderPath());
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, this.getShaderName());
+        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius, this.getShaderName());
     }
 
     public void buildDomainExpansionOnReload() {
         DomainBlockBuilder.buildHollowInside(level(), blockPosition(), this);
 
-        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), maxRadius, this.getShaderPath());
-        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), maxRadius, maxRadius, this.getShaderPath());
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), maxRadius, this.getShaderName());
+        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), maxRadius, maxRadius, this.getShaderName());
     }
 
     public void sendPlayersInDomainPacket() {
@@ -433,6 +432,7 @@ public class DomainEntity extends LivingEntity {
 
     public void saveDomainBlocks() {
         int maxRadius = this.maxRadius + 1;
+        ListTag listTag = new ListTag();
 
         for (int x = -maxRadius; x <= maxRadius; x++) {
             for (int y = -maxRadius; y <= maxRadius; y++) {
@@ -446,13 +446,17 @@ public class DomainEntity extends LivingEntity {
                         if (level().getBlockEntity(pos) != null) {
                             CompoundTag compoundTag = level().getBlockEntity(pos).saveWithFullMetadata(level().registryAccess());
 
-                            savedBlockEntities.add(compoundTag);
+                            listTag.add(compoundTag);
                         }
 
                         savedBlocks.put(pos.immutable(), level().getBlockState(pos));
                     }
                 }
             }
+        }
+
+        if (!listTag.isEmpty()) {
+            savedBlockEntities.put("BlockEntityTags", listTag);
         }
     }
 
@@ -480,7 +484,7 @@ public class DomainEntity extends LivingEntity {
         }
 
         DomainClashEntity domainClash = new DomainClashEntity(ModEntities.DOMAIN_CLASH_ENTITY, level());
-        List<ResourceLocation> clashingShaderPaths = new ArrayList<>(List.of(this.getShaderPath()));
+        List<String> clashingShaderPaths = new ArrayList<>(List.of(this.getShaderName()));
 
         if (!domainsInRange.isEmpty()) {
             Vec3 midpointCoordinates = position();
@@ -514,7 +518,7 @@ public class DomainEntity extends LivingEntity {
 
                 domainOwnersAndEffects.put(domainEntity.getOwnerUUID(), domainEntity.getDomainEffect());
 
-                clashingShaderPaths.add(domainEntity.getShaderPath());
+                clashingShaderPaths.add(domainEntity.getShaderName());
             }
 
             domainClash.of(clashRadius, clashLifetime, domainsInRange, clashPos, clashingShaderPaths);
@@ -623,9 +627,9 @@ public class DomainEntity extends LivingEntity {
                 this.level().setBlockAndUpdate(savedBlockPos, Blocks.AIR.defaultBlockState());
             }
 
-            if (!savedBlockEntities.isEmpty()) {
+            if (!savedBlockEntities.getList("BlockEntityTags", 0).isEmpty()) {
                 if (level().getBlockEntity(savedBlockPos) != null) {
-                    for (Tag tag : savedBlockEntities) {
+                    for (Tag tag : savedBlockEntities.getList("BlockEntityTags", 0)) {
                         BlockEntity reconstructedBlockEntity = level().getBlockEntity(savedBlockPos);
 
                         assert reconstructedBlockEntity != null;
@@ -695,11 +699,11 @@ public class DomainEntity extends LivingEntity {
         return HumanoidArm.RIGHT;
     }
 
-    public ResourceLocation getShaderPath() {
-        return SHADER_PATH;
+    public String getShaderName() {
+        return domainShaderName;
     }
 
-    public void setShaderPath(ResourceLocation SHADER_PATH) {
-        this.SHADER_PATH = SHADER_PATH;
+    public void setShaderName(String domainShaderName) {
+        this.domainShaderName = domainShaderName;
     }
 }

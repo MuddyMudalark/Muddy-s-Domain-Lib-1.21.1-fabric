@@ -3,7 +3,6 @@ package muddy.domain_framework.block.custom;
 import com.mojang.serialization.MapCodec;
 import muddy.domain_framework.block.entity.custom.DomainBarrierEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -13,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class DomainBarrierBlock extends BaseEntityBlock {
     private BlockPos centerOfDomain;
-    private ResourceLocation shaderPath;
+    private String shaderName;
 
     public DomainBarrierBlock(Properties properties) {
         super(properties);
@@ -32,17 +31,20 @@ public class DomainBarrierBlock extends BaseEntityBlock {
         return centerOfDomain;
     }
 
-    public void setShaderPath(ResourceLocation shaderPath) {
-        this.shaderPath = shaderPath;
+    public void setShaderName(String shaderName) {
+        this.shaderName = shaderName;
     }
 
-    public ResourceLocation getShaderPath() {
-        return shaderPath;
+    public String getShaderName() {
+        return shaderName;
     }
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return new DomainBarrierEntity(blockPos, blockState);
+        DomainBarrierEntity domainBarrierEntity = new DomainBarrierEntity(blockPos, blockState);
+        domainBarrierEntity.setDomainShaderPath(this.getShaderName());
+
+        return domainBarrierEntity;
     }
 
     @Override

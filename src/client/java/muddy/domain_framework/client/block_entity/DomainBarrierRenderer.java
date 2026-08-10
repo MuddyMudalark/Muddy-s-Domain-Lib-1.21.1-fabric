@@ -4,24 +4,17 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import muddy.domain_framework.block.entity.custom.DomainBarrierEntity;
 import muddy.domain_framework.client.render.ModRenderTypes;
-import muddy.domain_framework.client.utils.DomainCenterPosition;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class DomainBarrierRenderer implements BlockEntityRenderer<DomainBarrierEntity> {
-    public static final ResourceLocation END_SKY_LOCATION = ResourceLocation.withDefaultNamespace("textures/environment/end_sky.png");
-    public static final ResourceLocation END_PORTAL_LOCATION = ResourceLocation.withDefaultNamespace("textures/entity/end_portal.png");
 
     public DomainBarrierRenderer(BlockEntityRendererProvider.Context context) {
+
     }
 
     @Override
@@ -35,16 +28,15 @@ public class DomainBarrierRenderer implements BlockEntityRenderer<DomainBarrierE
         poseStack.scale(scale, scale, scale);
         poseStack.translate(-0.5, -0.5, -0.5);
 
-        this.renderCube(blockEntity, matrix4f, multiBufferSource.getBuffer(this.renderType()));
+        this.renderCube(blockEntity, matrix4f, multiBufferSource.getBuffer(this.getRenderTypeFromLocation(blockEntity)));
 
         poseStack.popPose();
+
     }
 
     private void renderCube(DomainBarrierEntity blockEntity, Matrix4f matrix4f, VertexConsumer vertexConsumer) {
         float f = this.getOffsetDown();
         float g = this.getOffsetUp();
-        List<Direction> internalDirections = blockEntity.getInternalFaces();
-        List<Direction> externalDirections = Arrays.stream(Direction.values()).toList();
 
         this.renderFace(blockEntity, matrix4f, vertexConsumer, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, Direction.SOUTH);
         this.renderFace(blockEntity, matrix4f, vertexConsumer, 0.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, Direction.NORTH);
@@ -71,7 +63,19 @@ public class DomainBarrierRenderer implements BlockEntityRenderer<DomainBarrierE
         return 0.0F;
     }
 
-    protected RenderType renderType() {
+    public RenderType getRenderTypeFromLocation(DomainBarrierEntity blockEntity) {
+        RenderType renderType = ModRenderTypes.getRenderTypeFromIdentifier(blockEntity.getDomainShaderName());
+
+        if (renderType == null) {
+            return defaultRenderType();
+        }
+
+        return renderType;
+    }
+
+    protected RenderType defaultRenderType() {
+
+
         return ModRenderTypes.insideDomain();
     }
 }

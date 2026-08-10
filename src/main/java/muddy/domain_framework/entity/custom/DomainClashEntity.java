@@ -16,7 +16,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -28,7 +27,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -43,9 +41,9 @@ import java.util.stream.IntStream;
 
 public class DomainClashEntity extends LivingEntity {
     private Map<BlockPos, BlockState> savedBlocks = new HashMap<>();
-    private ListTag savedBlockEntities = new ListTag();
+    private CompoundTag savedBlockEntities = new CompoundTag();
     private Map<UUID, Holder<MobEffect>> ownersAndDomainEffects = new HashMap<>();
-    private List<ResourceLocation> clashingShaderPaths = new ArrayList<>();
+    private List<String> clashingShaderPaths = new ArrayList<>();
 
     private int ticksInBetweenExpansion = 0;
 
@@ -77,13 +75,14 @@ public class DomainClashEntity extends LivingEntity {
         super(entityType, level);
     }
 
-    public void of(int radius, int lifetime, List<DomainEntity> domainEntities, BlockPos centerPos, List<ResourceLocation> clashingShaderPaths) {
+    public void of(int radius, int lifetime, List<DomainEntity> domainEntities, BlockPos centerPos, List<String> clashingShaderPaths) {
         this.maxRadius = radius;
         this.domainLifetime = lifetime;
 
         for (DomainEntity domain : domainEntities) {
             ownersAndDomainEffects.put(domain.getOwnerUUID(), domain.getDomainEffect());
             domainEffectLengths.put(domain.getOwnerUUID(), domain.getDomainEffectLength());
+
         }
 
         this.playerCount = ownersAndDomainEffects.size();
@@ -105,7 +104,7 @@ public class DomainClashEntity extends LivingEntity {
 
         compoundTag.put("DomainEffectLengths", Codec.INT.listOf().encodeStart(NbtOps.INSTANCE, domainEffectLengths.values().stream().toList()).getOrThrow());
 
-        compoundTag.put("ShaderPaths", ResourceLocation.CODEC.listOf().encodeStart(NbtOps.INSTANCE, clashingShaderPaths).getOrThrow());
+        compoundTag.put("ShaderNames", Codec.STRING.listOf().encodeStart(NbtOps.INSTANCE, clashingShaderPaths).getOrThrow());
 
         if (this.savedBlocks != null && !this.savedBlocks.isEmpty()) {
             ListTag posList = new ListTag();
@@ -154,7 +153,7 @@ public class DomainClashEntity extends LivingEntity {
         List<BlockPos> blockPosList = new ArrayList<>(List.of());
         List<BlockState> blockStateList = new ArrayList<>(List.of());
 
-        clashingShaderPaths = ResourceLocation.CODEC.listOf().parse(NbtOps.INSTANCE, compoundTag.get("ShaderPaths")).getOrThrow();
+        clashingShaderPaths = Codec.STRING.listOf().parse(NbtOps.INSTANCE, compoundTag.get("ShaderNames")).getOrThrow();
 
         assert posList != null;
         for (Tag tag : posList) {
@@ -187,7 +186,7 @@ public class DomainClashEntity extends LivingEntity {
         this.playerCount = ownersAndDomainEffects.size();
         this.degreesPerPlayer = playerCount == 0 ? 90 : 360 / playerCount;
 
-        savedBlockEntities = (ListTag) compoundTag.get("ReplacedBlockEntities");
+        savedBlockEntities = compoundTag.getCompound("ReplacedBlockEntities");
         savedBlocks.clear();
         savedBlocks = mappedResults;
 
@@ -312,10 +311,15 @@ public class DomainClashEntity extends LivingEntity {
                         }
                     }
                 } else if (isClashing) {
-//                    MuddysDomainFramework.LOGGER.info("Beep (Clashing)");
                     for (UUID ownerUUID : ownersAndDomainEffects.keySet()) {
                         Player player = level().getPlayerByUUID(ownerUUID);
                         if (player != null) {
+                            if (player.position().distanceTo(position()) > maxRadius) {
+                                ownersAndDomainEffects.remove(player.getUUID());
+
+                                return;
+                            }
+
                             for (UUID ownerUUID2 : ownersAndDomainEffects.keySet()) {
                                 if (!ownerUUID.equals(ownerUUID2)) {
                                     Player player2 = level().getPlayerByUUID(ownerUUID2);
@@ -331,7 +335,7 @@ public class DomainClashEntity extends LivingEntity {
                                 }
                             }
 
-                            if (((ClashScoreAccessor) player).domain$getClashScore() >= 10) {
+                            if (((ClashScoreAccessor) player).domain$getClashScore() >= 10 || ownersAndDomainEffects.size() == 1) {
                                 clashWinner = player;
 
                                 endDomainClashWithWinner();
@@ -380,6 +384,7 @@ public class DomainClashEntity extends LivingEntity {
 
     public void saveDomainBlocks() {
         int maxRadius = this.maxRadius + 1;
+        ListTag listTag = new ListTag();
 
         for (int x = -maxRadius; x <= maxRadius; x++) {
             for (int y = -maxRadius; y <= maxRadius; y++) {
@@ -393,19 +398,30 @@ public class DomainClashEntity extends LivingEntity {
                         savedBlocks.put(pos.immutable(), level().getBlockState(pos));
 
                         if (level().getBlockEntity(pos) != null) {
-                            savedBlockEntities.add(level().getBlockEntity(pos).saveWithFullMetadata(level().registryAccess()));
+                            listTag.add(level().getBlockEntity(pos).saveWithFullMetadata(level().registryAccess()));
                         }
 
                     }
                 }
             }
         }
+
+        if (!listTag.isEmpty()) {
+            savedBlockEntities.put("BlockEntityTags", listTag);
+        }
     }
 
     public void firstTicksDomainExpansion() {
         DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius, haveOwnersBeenTeleported());
 
-        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, getFirstShaderPath());
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, clashingShaderPaths.getFirst());
+    }
+
+    public void domainExpansion() {
+        DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius, haveOwnersBeenTeleported());
+
+        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, clashingShaderPaths.getFirst());
+        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius, clashingShaderPaths.getFirst());
     }
 
     public void endDomainClashWithWinner() {
@@ -419,9 +435,9 @@ public class DomainClashEntity extends LivingEntity {
                 this.level().setBlockAndUpdate(savedBlockPos, Blocks.AIR.defaultBlockState());
             }
 
-            if (!savedBlockEntities.isEmpty()) {
+            if (!savedBlockEntities.getList("BlockEntityTags", 0).isEmpty()) {
                 if (level().getBlockEntity(savedBlockPos) != null) {
-                    for (Tag tag : savedBlockEntities) {
+                    for (Tag tag : savedBlockEntities.getList("BlockEntityTags", 0)) {
                         BlockEntity reconstructedBlockEntity = level().getBlockEntity(savedBlockPos);
 
                         assert reconstructedBlockEntity != null;
@@ -455,12 +471,7 @@ public class DomainClashEntity extends LivingEntity {
         replaceDomainSpace();
     }
 
-    public void domainExpansion() {
-        DomainClashBlockBuilder.buildHollowInside(level(), blockPosition(), radius, haveOwnersBeenTeleported());
 
-        DomainBlockBuilder.buildStandingSurface(level(), blockPosition(), radius, getFirstShaderPath());
-        DomainBlockBuilder.buildHollowSphereDynamically(level(), blockPosition(), radius, yRadius, getFirstShaderPath());
-    }
 
     public void replaceDomainSpace() {
         for (Map.Entry<BlockPos, BlockState> entry : savedBlocks.entrySet()) {
@@ -475,7 +486,7 @@ public class DomainClashEntity extends LivingEntity {
 
             if (!savedBlockEntities.isEmpty()) {
                 if (level().getBlockEntity(savedBlockPos) != null) {
-                    for (Tag tag : savedBlockEntities) {
+                    for (Tag tag : savedBlockEntities.getList("BlockEntityTags", 0)) {
                         BlockEntity reconstructedBlockEntity = level().getBlockEntity(savedBlockPos);
 
                         assert reconstructedBlockEntity != null;
@@ -551,15 +562,11 @@ public class DomainClashEntity extends LivingEntity {
         super.setNoGravity(bl);
     }
 
-    public ResourceLocation getFirstShaderPath() {
-        return clashingShaderPaths.getFirst();
-    }
-
-    public List<ResourceLocation> getClashingShaderPaths() {
+    public List<String> getClashingShaderPaths() {
         return clashingShaderPaths;
     }
 
-    public void setClashingShaderPaths(List<ResourceLocation> clashingShaderPaths) {
+    public void setClashingShaderNames(List<String> clashingShaderPaths) {
         this.clashingShaderPaths = clashingShaderPaths;
     }
 }

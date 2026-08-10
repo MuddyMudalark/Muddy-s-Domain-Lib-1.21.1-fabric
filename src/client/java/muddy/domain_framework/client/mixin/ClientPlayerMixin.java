@@ -68,18 +68,11 @@ public class ClientPlayerMixin implements DomainCenterPosition {
                 }
             }
         }
-        if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainClashAirBlock) {
-            if (level.isClientSide()) {
-                if (thisEntity instanceof Player player) {
-                    if (!((HasDomainExpanded)player).domain$hasDomainExpanded()) {
-                        if (!((HasDomainExpanded) player).domain$hasDomainExpanded()) {
-                            assert Minecraft.getInstance().player != null;
-                            if (Minecraft.getInstance().player.getUUID().equals(player.getUUID())) {
-                                player.setDeltaMovement(Vec3.ZERO);
-                                player.setPos(entityBlockPos.getBottomCenter());
-                            }
-                        }
-                    }
+        if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainClashAirBlock domainClashAir) {
+            if (!level.isClientSide()) {
+                if (!domainClashAir.havePlayersBeenTeleported()) {
+                    thisEntity.setDeltaMovement(Vec3.ZERO);
+                    thisEntity.setPos(entityBlockPos.getBottomCenter());
                 }
             }
         }
@@ -89,13 +82,6 @@ public class ClientPlayerMixin implements DomainCenterPosition {
     @Override
     public BlockPos domain$getDomainCenter() {
         return currentDomainCenter;
-    }
-
-    @Override
-    public boolean domain$shouldRenderInternalDomain() {
-        LivingEntity thisEntity = ((LivingEntity) (Object) this);
-
-        return false;
     }
 
     @Override

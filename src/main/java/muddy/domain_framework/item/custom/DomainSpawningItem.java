@@ -19,6 +19,7 @@ public class DomainSpawningItem extends Item {
     private final Holder<MobEffect> domainAppliedEffect;
     private int domainRadius = 18;
     private int domainEffectLength = 40;
+    private String domainShaderName;
 
     private DomainEntity domain = null;
 
@@ -38,10 +39,11 @@ public class DomainSpawningItem extends Item {
         this.domainRadius = domainRadius;
     }
 
-    public DomainSpawningItem(Properties properties, Holder<MobEffect> domainEffect) {
+    public DomainSpawningItem(Properties properties, Holder<MobEffect> domainEffect, String domainShaderName) {
         super(properties);
 
         this.domainAppliedEffect = domainEffect;
+        this.domainShaderName = domainShaderName;
     }
 
     @Override
@@ -62,6 +64,7 @@ public class DomainSpawningItem extends Item {
         domain = new DomainEntity(ModEntities.DOMAIN_ENTITY, level);
         domain.of(domainAppliedEffect, domainEffectLength, player.position(), player, domainRadius);
         domain.setDomainRadius(domainRadius);
+        domain.setShaderName(domainShaderName);
 
         player.setDeltaMovement(Vec3.ZERO);
 
