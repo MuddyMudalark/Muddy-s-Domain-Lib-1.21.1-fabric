@@ -3,6 +3,8 @@ package muddy.domain_framework.mixin;
 import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
+import muddy.domain_framework.effect.ModEffects;
+import muddy.domain_framework.effect.custom.SimpleDomainEffect;
 import muddy.domain_framework.util.HasDomainExpanded;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -41,41 +43,52 @@ public class LivingEntityMixin implements HasDomainExpanded {
         if (level.getBlockState(entityBlockPos).getBlock() instanceof DomainAirBlock domainAir) {
             UUID ownerUUID = domainAir.getDomainOwnerUUID();
             if (ownerUUID != null) {
-                if (domainAir.shouldTargetOthers()) {
-                    if (!thisEntity.getUUID().equals(ownerUUID)) {
-                        if (!domainAir.getDomainEffect().equals(null)) {
-                            if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
-                                thisEntity.addEffect(new MobEffectInstance(
-                                                domainAir.getDomainEffect(),
-                                                domainAir.getDomainEffectLength(),
-                                                0,
-                                                false,
-                                                false
-                                        )
-                                );
+                boolean hasSimpleDomain = false;
+
+                for (MobEffectInstance mobEffectInstance : thisEntity.getActiveEffects()) {
+                    if (mobEffectInstance.getEffect().value() instanceof SimpleDomainEffect) {
+                        hasSimpleDomain = true;
+
+                        break;
+                    }
+                }
+
+                if (!hasSimpleDomain) {
+                    if (domainAir.shouldTargetOthers()) {
+                        if (!thisEntity.getUUID().equals(ownerUUID)) {
+                            if (!domainAir.getDomainEffect().equals(null)) {
+                                if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
+                                    thisEntity.addEffect(new MobEffectInstance(
+                                                    domainAir.getDomainEffect(),
+                                                    domainAir.getDomainEffectLength(),
+                                                    0,
+                                                    false,
+                                                    false
+                                            )
+                                    );
+                                }
+                            }
+                        }
+                    }
+
+                    if (domainAir.shouldTargetOwner()) {
+                        if (thisEntity.getUUID().equals(ownerUUID)) {
+                            if (!domainAir.getDomainEffect().equals(null)) {
+                                if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
+
+                                    thisEntity.addEffect(new MobEffectInstance(
+                                                    domainAir.getDomainEffect(),
+                                                    domainAir.getDomainEffectLength(),
+                                                    0,
+                                                    false,
+                                                    false
+                                            )
+                                    );
+                                }
                             }
                         }
                     }
                 }
-
-                if (domainAir.shouldTargetOwner()) {
-                    if (thisEntity.getUUID().equals(ownerUUID)) {
-                        if (!domainAir.getDomainEffect().equals(null)) {
-                            if (!thisEntity.hasEffect(domainAir.getDomainEffect())) {
-
-                                thisEntity.addEffect(new MobEffectInstance(
-                                                domainAir.getDomainEffect(),
-                                                domainAir.getDomainEffectLength(),
-                                                0,
-                                                false,
-                                                false
-                                        )
-                                );
-                            }
-                        }
-                    }
-                }
-
             }
             if (!level.isClientSide()) {
                 if (!domainAir.getHasExpandedFully()) {

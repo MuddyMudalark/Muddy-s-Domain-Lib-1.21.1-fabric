@@ -1,7 +1,8 @@
 package muddy.domain_framework.effect;
 
 import muddy.domain_framework.MuddysDomainFramework;
-import muddy.domain_framework.effect.custom.DomainEffect;
+import muddy.domain_framework.effect.custom.RedBullEffect;
+import muddy.domain_framework.effect.custom.SimpleDomainEffect;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,12 +12,19 @@ import net.minecraft.world.effect.MobEffectCategory;
 
 public class ModEffects {
     public static final Holder<MobEffect> RED_BULL;
+    public static final Holder<MobEffect> EXAMPLE_SIMPLE_DOMAIN;
 
     static {
         RED_BULL = Registry.registerForHolder(
                 BuiltInRegistries.MOB_EFFECT,
                 ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, "expanding-domain"),
-                new DomainEffect(MobEffectCategory.NEUTRAL, 0)
+                new RedBullEffect(MobEffectCategory.NEUTRAL, 0)
+        );
+
+        EXAMPLE_SIMPLE_DOMAIN = Registry.registerForHolder(
+                BuiltInRegistries.MOB_EFFECT,
+                ResourceLocation.fromNamespaceAndPath(MuddysDomainFramework.MOD_ID, "example_simple_domain"),
+                new SimpleDomainEffect(MobEffectCategory.BENEFICIAL, 0)
         );
     }
 

@@ -5,6 +5,7 @@ import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
+import muddy.domain_framework.command.ModGameRules;
 import muddy.domain_framework.entity.ModEntities;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
 import muddy.domain_framework.util.ClashScoreAccessor;
@@ -247,6 +248,8 @@ public class DomainClashEntity extends LivingEntity {
     @Override
     public void tick() {
         if (!level().isClientSide) {
+            lifetime = level().getGameRules().getInt(ModGameRules.CLASH_LENGTH);
+
             if (firstTimeTicked && firstTick) {
                 saveDomainBlocks();
 

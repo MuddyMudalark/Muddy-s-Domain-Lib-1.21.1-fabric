@@ -4,8 +4,8 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 
-public class DomainEffect extends MobEffect {
-    public DomainEffect(MobEffectCategory mobEffectCategory, int i) {
+public class RedBullEffect extends MobEffect {
+    public RedBullEffect(MobEffectCategory mobEffectCategory, int i) {
         super(mobEffectCategory, i);
     }
 

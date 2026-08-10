@@ -12,7 +12,6 @@ import net.minecraft.core.Direction;
 import org.joml.Matrix4f;
 
 public class DomainBarrierRenderer implements BlockEntityRenderer<DomainBarrierEntity> {
-
     public DomainBarrierRenderer(BlockEntityRendererProvider.Context context) {
 
     }

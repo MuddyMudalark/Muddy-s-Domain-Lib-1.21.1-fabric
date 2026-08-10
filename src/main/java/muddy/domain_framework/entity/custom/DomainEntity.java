@@ -215,7 +215,7 @@ public class DomainEntity extends LivingEntity {
         compoundTag.putInt("DomainRadius", this.maxRadius);
         compoundTag.putInt("DomainLifetime", this.lifetime);
         compoundTag.putBoolean("HasDomainExpanded", this.hasExpandedFully);
-        compoundTag.put("DomainEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
+        compoundTag.put("RedBullEffect", MobEffect.CODEC.encodeStart(NbtOps.INSTANCE, this.domainEffect).getOrThrow());
 
         compoundTag.putBoolean("ShouldTargetOwner", this.shouldTargetOwner);
         compoundTag.putBoolean("ShouldTargetOthers", this.shouldTargetOthers);
@@ -243,7 +243,7 @@ public class DomainEntity extends LivingEntity {
         age = compoundTag.get("DomainAge") == null ? 0 : compoundTag.getInt("DomainAge");
         lifetime = compoundTag.get("DomainLifetime") == null ? 300 : compoundTag.getInt("DomainLifetime");
         maxRadius = compoundTag.get("DomainRadius") == null ? 300 : compoundTag.getInt("DomainRadius");
-        domainEffect = MobEffect.CODEC.parse(NbtOps.INSTANCE, compoundTag.get("DomainEffect"))
+        domainEffect = MobEffect.CODEC.parse(NbtOps.INSTANCE, compoundTag.get("RedBullEffect"))
                 .resultOrPartial(error -> MuddysDomainFramework.LOGGER.info("The Overall Effect This Code Has on me is: {}", error))
                 .orElse(MobEffects.LEVITATION);
 

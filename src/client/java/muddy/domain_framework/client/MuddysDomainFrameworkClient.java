@@ -1,14 +1,18 @@
 package muddy.domain_framework.client;
 
 import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.block.entity.ModBlockEntities;
 import muddy.domain_framework.client.block_entity.DomainBarrierRenderer;
 import muddy.domain_framework.client.entity.DomainClashRenderer;
 import muddy.domain_framework.client.entity.DomainRenderer;
 import muddy.domain_framework.entity.ModEntities;
+import muddy.domain_framework.network.ClashWinScoreGameRuleS2CPayload;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
 import muddy.domain_framework.client.utils.DomainCenterPosition;
+import muddy.domain_framework.util.ClashScoreAccessor;
 import muddy.domain_framework.util.HasDomainExpanded;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -16,6 +20,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -34,6 +39,8 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
     @Nullable
     public static ShaderInstance DOMAIN_ALTERNATIVE;
 
+    private int clashWinScore = 2400;
+
     @Override
     public void onInitializeClient() {
         EntityRendererRegistry.register(ModEntities.DOMAIN_ENTITY, DomainRenderer::new);
@@ -49,6 +56,10 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
 
             ((HasDomainExpanded) context.player()).domain$setHasDomainExpanded(payload.hasFullyExpanded());
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(ClashWinScoreGameRuleS2CPayload.ID, ((payload, context) -> {
+            clashWinScore = payload.winScore();
+        }));
 
         CoreShaderRegistrationCallback.EVENT.register(context -> {
             context.register(
@@ -73,6 +84,8 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(listener -> {
             LocalPlayer player = listener.player;
 
+//            MuddysDomainFramework.LOGGER.info("{}", DOMAIN_CLASH_PROGRESS_BAR);
+
             if (player != null) {
                 BlockPos centerOfDomain = ((DomainCenterPosition) player).domain$getDomainCenter();
 
@@ -88,16 +101,29 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
                                 (float) domainVectorisedCenter.y(),
                                 (float) domainVectorisedCenter.z()
                         );
-                    }
-                    else {
+                    } else {
                         domainCenterUniform.set(0.0F, 0.0F, 0.0F);
                     }
                 }
 
 
                 HudRenderCallback.EVENT.register((context, tickDeltaManager) -> {
+                    ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/clash_progress.png");
+                    // texture, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight
+                    context.blit(texture,
+                            context.guiWidth()/2-200,
+                            context.guiHeight()/2-140,
+                            (float) ((ClashScoreAccessor) player).domain$getClashScore() / clashWinScore,
+                            0,
+                            128,
+                            128,
+                            128,
+                            128
+                    );
 
-                    context.renderFakeItem(Items.DIAMOND.getDefaultInstance(), context.guiWidth()/2-7, context.guiHeight()/2-8);
+                    ResourceLocation texture2 = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/clash_progress_bar.png");
+                    // texture, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight
+                    context.blit(texture2, context.guiWidth()/2-200, context.guiHeight()/2-140, 0, 0, 128, 128, 128, 128);
                 });
 
             }

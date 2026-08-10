@@ -3,12 +3,17 @@ package muddy.domain_framework.block.custom;
 import com.mojang.serialization.MapCodec;
 import muddy.domain_framework.block.entity.custom.DomainBarrierEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.BiConsumer;
 
 public class DomainBarrierBlock extends BaseEntityBlock {
     private BlockPos centerOfDomain;
@@ -37,6 +42,12 @@ public class DomainBarrierBlock extends BaseEntityBlock {
 
     public String getShaderName() {
         return shaderName;
+    }
+
+    @Override
+    protected void onExplosionHit(BlockState blockState, Level level, BlockPos blockPos, Explosion explosion, BiConsumer<ItemStack, BlockPos> biConsumer) {
+        super.onExplosionHit(blockState, level, blockPos, explosion, biConsumer);
+
     }
 
     @Override
