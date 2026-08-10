@@ -34,8 +34,6 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
     @Nullable
     public static ShaderInstance DOMAIN_ALTERNATIVE;
 
-    private float totalTickDelta = 0.0F;
-
     @Override
     public void onInitializeClient() {
         EntityRendererRegistry.register(ModEntities.DOMAIN_ENTITY, DomainRenderer::new);
