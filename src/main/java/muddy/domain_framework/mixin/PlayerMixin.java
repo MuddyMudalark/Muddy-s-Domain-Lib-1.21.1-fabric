@@ -1,8 +1,12 @@
 package muddy.domain_framework.mixin;
 
+import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
+import muddy.domain_framework.network.UpdateClientClashScoreS2CPayload;
 import muddy.domain_framework.util.ClashScoreAccessor;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -14,8 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class PlayerMixin implements ClashScoreAccessor {
     @Unique
     public int clashScore = 0;
-    @Unique
-    public boolean shouldRenderDomainInside;
 
     @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     public void domain$addSaveData(CompoundTag compoundTag, CallbackInfo ci) {
@@ -25,6 +27,12 @@ public class PlayerMixin implements ClashScoreAccessor {
     @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
     public void domain$readAddedSaveData(CompoundTag compoundTag, CallbackInfo ci) {
         domain$setClashScore(compoundTag.getInt("DomainClashScore"));
+        ServerPlayer player = ((ServerPlayer)(Object)this);
+        if (player.connection != null) {
+            UpdateClientClashScoreS2CPayload payload = new UpdateClientClashScoreS2CPayload(compoundTag.getInt("DomainClashScore"));
+
+            ServerPlayNetworking.send(player, payload);
+        }
     }
 
     @Override
@@ -35,7 +43,7 @@ public class PlayerMixin implements ClashScoreAccessor {
     @Override
     public void domain$incrementClashScore() {
         Player thisPlayer = ((Player)(Object)this);
-        thisPlayer.displayClientMessage(Component.literal("Your Dominance is at: ".concat((clashScore*10+10)+"%")), true);
+        thisPlayer.displayClientMessage(Component.literal("Your Dominance is at: ".concat((clashScore)+"")), true);
 
         clashScore++;
     }

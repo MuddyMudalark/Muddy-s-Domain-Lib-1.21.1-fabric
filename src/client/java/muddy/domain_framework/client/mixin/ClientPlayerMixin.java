@@ -4,6 +4,7 @@ import muddy.domain_framework.block.custom.DomainAirBlock;
 import muddy.domain_framework.block.custom.DomainBarrierBlock;
 import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import muddy.domain_framework.client.utils.DomainCenterPosition;
+import muddy.domain_framework.client.utils.InClashAccessor;
 import muddy.domain_framework.util.HasDomainExpanded;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -20,9 +21,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LocalPlayer.class)
-public class ClientPlayerMixin implements DomainCenterPosition {
+public class ClientPlayerMixin implements DomainCenterPosition, InClashAccessor {
     @Unique
     BlockPos currentDomainCenter = BlockPos.ZERO;
+
+    @Unique
+    boolean isPlayerInClash = false;
 
     @Inject(method = "tick", at = @At("TAIL"))
     public void domain$fuckClientLevels(CallbackInfo ci) {
@@ -30,6 +34,8 @@ public class ClientPlayerMixin implements DomainCenterPosition {
         Level level = thisEntity.level();
 
         if (level != null) {
+            isPlayerInClash = level.getBlockState(thisEntity.blockPosition()).getBlock() instanceof DomainClashAirBlock;
+
             domain$inDomainAirBlock(level);
 
             Block block = level.getBlockState(thisEntity.blockPosition()).getBlock();
@@ -87,5 +93,10 @@ public class ClientPlayerMixin implements DomainCenterPosition {
     @Override
     public void domain$setDomainCenter(BlockPos domainCenter) {
         this.currentDomainCenter = domainCenter;
+    }
+
+    @Override
+    public boolean domain$isInClash() {
+        return isPlayerInClash;
     }
 }

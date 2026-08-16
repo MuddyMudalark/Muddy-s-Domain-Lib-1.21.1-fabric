@@ -11,6 +11,7 @@ import muddy.domain_framework.entity.custom.DomainEntity;
 import muddy.domain_framework.item.ModItems;
 import muddy.domain_framework.network.ClashWinScoreGameRuleS2CPayload;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
+import muddy.domain_framework.network.UpdateClientClashScoreS2CPayload;
 import muddy.domain_framework.sounds.ModSounds;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -60,6 +61,7 @@ public class MuddysDomainFramework implements ModInitializer {
 
         PayloadTypeRegistry.playS2C().register(DomainHasExpandedS2CPayload.ID, DomainHasExpandedS2CPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ClashWinScoreGameRuleS2CPayload.ID, ClashWinScoreGameRuleS2CPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(UpdateClientClashScoreS2CPayload.ID, UpdateClientClashScoreS2CPayload.CODEC);
 
         FabricDefaultAttributeRegistry.register(ModEntities.DOMAIN_ENTITY, DomainEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.DOMAIN_CLASH_ENTITY, DomainClashEntity.createAttributes());

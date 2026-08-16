@@ -8,6 +8,7 @@ import muddy.domain_framework.block.custom.DomainClashAirBlock;
 import muddy.domain_framework.command.ModGameRules;
 import muddy.domain_framework.entity.ModEntities;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
+import muddy.domain_framework.network.UpdateClientClashScoreS2CPayload;
 import muddy.domain_framework.util.ClashScoreAccessor;
 import muddy.domain_framework.util.DomainBlockBuilder;
 import muddy.domain_framework.util.DomainClashBlockBuilder;
@@ -332,13 +333,16 @@ public class DomainClashEntity extends LivingEntity {
                                             if (player.getLastHurtByMob() == player2) {
 
                                                 ((ClashScoreAccessor) player2).domain$incrementClashScore();
+
+                                                UpdateClientClashScoreS2CPayload payload = new UpdateClientClashScoreS2CPayload(((ClashScoreAccessor)player2).domain$getClashScore());
+                                                ServerPlayNetworking.send((ServerPlayer) player2, payload);
                                             }
                                         }
                                     }
                                 }
                             }
 
-                            if (((ClashScoreAccessor) player).domain$getClashScore() >= 10 || ownersAndDomainEffects.size() == 1) {
+                            if (((ClashScoreAccessor) player).domain$getClashScore() >= player.getServer().getGameRules().getInt(ModGameRules.CLASH_WIN_SCORE) || ownersAndDomainEffects.size() == 1) {
                                 clashWinner = player;
 
                                 endDomainClashWithWinner();

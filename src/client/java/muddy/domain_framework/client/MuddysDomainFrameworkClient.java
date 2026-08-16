@@ -1,18 +1,17 @@
 package muddy.domain_framework.client;
 
 import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import muddy.domain_framework.MuddysDomainFramework;
 import muddy.domain_framework.block.entity.ModBlockEntities;
 import muddy.domain_framework.client.block_entity.DomainBarrierRenderer;
 import muddy.domain_framework.client.entity.DomainClashRenderer;
 import muddy.domain_framework.client.entity.DomainRenderer;
+import muddy.domain_framework.client.utils.InClashAccessor;
 import muddy.domain_framework.entity.ModEntities;
 import muddy.domain_framework.network.ClashWinScoreGameRuleS2CPayload;
 import muddy.domain_framework.network.DomainHasExpandedS2CPayload;
 import muddy.domain_framework.client.utils.DomainCenterPosition;
-import muddy.domain_framework.util.ClashScoreAccessor;
+import muddy.domain_framework.network.UpdateClientClashScoreS2CPayload;
 import muddy.domain_framework.util.HasDomainExpanded;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -27,7 +26,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +38,8 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
     public static ShaderInstance DOMAIN_ALTERNATIVE;
 
     private int clashWinScore = 2400;
+    private int playerClashScore = 0;
+    private int currentClashScore = 0;
 
     @Override
     public void onInitializeClient() {
@@ -59,6 +59,10 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(ClashWinScoreGameRuleS2CPayload.ID, ((payload, context) -> {
             clashWinScore = payload.winScore();
+        }));
+
+        ClientPlayNetworking.registerGlobalReceiver(UpdateClientClashScoreS2CPayload.ID, ((payload, context) -> {
+            playerClashScore = payload.clashScore();
         }));
 
         CoreShaderRegistrationCallback.EVENT.register(context -> {
@@ -106,26 +110,31 @@ public class MuddysDomainFrameworkClient implements ClientModInitializer {
                     }
                 }
 
+            }
+        });
 
-                HudRenderCallback.EVENT.register((context, tickDeltaManager) -> {
-                    ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/clash_progress.png");
-                    // texture, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight
-                    context.blit(texture,
-                            context.guiWidth()/2-200,
-                            context.guiHeight()/2-140,
-                            (float) ((ClashScoreAccessor) player).domain$getClashScore() / clashWinScore,
-                            0,
-                            128,
-                            128,
-                            128,
-                            128
-                    );
 
-                    ResourceLocation texture2 = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/clash_progress_bar.png");
-                    // texture, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight
-                    context.blit(texture2, context.guiWidth()/2-200, context.guiHeight()/2-140, 0, 0, 128, 128, 128, 128);
-                });
 
+        HudRenderCallback.EVENT.register((context, tickDeltaManager) -> {
+            LocalPlayer player = Minecraft.getInstance().player;
+
+            assert player != null;
+            if (((InClashAccessor)player).domain$isInClash()) {
+                currentClashScore = (currentClashScore == playerClashScore) ? playerClashScore : currentClashScore + 1;
+
+                float clashPercent = (((float) playerClashScore / clashWinScore));
+
+                int rectangleX = 20;
+                int rectangleY = 5;
+                int rectangleWidth = 150;
+                int rectangleHeight = 10;
+
+                context.fill(rectangleX, rectangleY, rectangleX + (int)(rectangleWidth * clashPercent), rectangleY + rectangleHeight, 0xFFFFFFFF);
+                // :::1
+
+                // :::2
+                // x, y, width, height, color
+                context.renderOutline(rectangleX, rectangleY, rectangleWidth, rectangleHeight, 0xFFFF0000);
             }
         });
 
