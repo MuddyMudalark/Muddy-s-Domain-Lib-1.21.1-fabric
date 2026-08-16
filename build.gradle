@@ -14,15 +14,6 @@ repositories {
 			includeGroup "maven.modrinth"
 		}
 	}
-	maven {
-		name = 'Ladysnake Mods'
-		url = 'https://maven.ladysnake.org/releases'
-		content {
-			includeGroup 'io.github.ladysnake'
-			includeGroup 'org.ladysnake'
-			includeGroupByRegex 'dev\\.onyxstudios.*'
-		}
-	}
 }
 
 loom {
@@ -45,11 +36,6 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	modImplementation "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
-
-	modImplementation "org.ladysnake:satin:${satin_version}"
-	// Include Satin as a Jar-in-Jar dependency (optional)
-	include "org.ladysnake:satin:${satin_version}"
 }
 
 processResources {
@@ -88,6 +74,8 @@ jar {
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
+			artifactId = "muddys-domain-framework"
+
 			from components.java
 		}
 	}
